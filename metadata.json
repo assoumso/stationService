@@ -1,0 +1,6 @@
+{
+  "name": "Station Barakat",
+  "description": "Application de gestion pour stations-service : tableau de bord, stocks de carburant, index pompes et cuves, écarts, boutique, lavage, vidange, employés, équipes, caisse et clôtures journalières.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
