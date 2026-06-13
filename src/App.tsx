@@ -14,7 +14,12 @@ import {
   Expense, 
   FuelType, 
   ShopCategory,
-  FuelQualityTest
+  FuelQualityTest,
+  JournalRecord,
+  JournalConfig,
+  ClientAccount,
+  CreditTransaction,
+  MaintenanceIncident
 } from './types';
 
 import { 
@@ -31,7 +36,12 @@ import {
   INITIAL_CASH_REGISTERS,
   INITIAL_EXPENSES,
   INITIAL_QUALITY_TESTS,
-  FUEL_PRICES
+  FUEL_PRICES,
+  INITIAL_JOURNAL_RECORDS,
+  DEFAULT_JOURNAL_CONFIG,
+  INITIAL_CLIENT_ACCOUNTS,
+  INITIAL_CREDIT_TRANSACTIONS,
+  INITIAL_MAINTENANCE_INCIDENTS
 } from './mockData';
 
 // Subcomponents
@@ -45,6 +55,9 @@ import EmployeesAndTeamsView from './components/EmployeesAndTeamsView';
 import CaisseAndDépensesView from './components/CaisseAndDépensesView';
 import ClotureView from './components/ClotureView';
 import ReportsView from './components/ReportsView';
+import JournalView from './components/JournalView';
+import CreditsView from './components/CreditsView';
+import MaintenanceView from './components/MaintenanceView';
 
 // Icons
 import { 
@@ -71,7 +84,9 @@ import {
   Check,
   Copy,
   AlertTriangle,
-  CheckCircle2
+  FileText,
+  CheckCircle2,
+  CreditCard
 } from 'lucide-react';
 
 import { 
@@ -101,6 +116,16 @@ export default function App() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   const [qualityTests, setQualityTests] = useState<FuelQualityTest[]>([]);
   const [closureStatus, setClosureStatus] = useState<'En cours' | 'Clôturé'>('En cours');
+  const [journalRecords, setJournalRecords] = useState<JournalRecord[]>([]);
+  const [journalConfig, setJournalConfig] = useState<JournalConfig>({
+    col1Title: "Entretien & Dépenses",
+    col2Title: "Dépôts & Avance",
+    col3Title: "Gazole / Carburant",
+    col4Title: "Autres / Péages"
+  });
+  const [clientAccounts, setClientAccounts] = useState<ClientAccount[]>([]);
+  const [creditTransactions, setCreditTransactions] = useState<CreditTransaction[]>([]);
+  const [maintenanceIncidents, setMaintenanceIncidents] = useState<MaintenanceIncident[]>([]);
 
   // --- SUPABASE SYNC STATES ---
   const [isSyncModalOpen, setIsSyncModalOpen] = useState<boolean>(false);
@@ -161,7 +186,12 @@ export default function App() {
     currentCashRegisters: CashRegister[],
     currentExpenses: Expense[],
     currentQualityTests: FuelQualityTest[],
-    currentClosureStatus: 'En cours' | 'Clôturé'
+    currentClosureStatus: 'En cours' | 'Clôturé',
+    currentJournalRecords: JournalRecord[],
+    currentJournalConfig: JournalConfig,
+    currentClientAccounts: ClientAccount[],
+    currentCreditTransactions: CreditTransaction[],
+    currentMaintenanceIncidents: MaintenanceIncident[]
   ) => {
     if (!isSupabaseConfigured()) return;
     setSupabaseStatus(prev => ({ ...prev, loading: true }));
@@ -178,7 +208,8 @@ export default function App() {
         const keys = [
           'fuels', 'pumps', 'tanks', 'deliveries', 'shopProducts', 'shopSales', 
           'carWash', 'oilChanges', 'employees', 'shifts', 'cashRegisters', 
-          'expenses', 'qualityTests', 'closureStatus'
+          'expenses', 'qualityTests', 'closureStatus', 'journalRecords', 'journalConfig',
+          'clientAccounts', 'creditTransactions', 'maintenanceIncidents'
         ];
 
         const results = await Promise.all(keys.map(k => loadStateFromSupabase(k)));
@@ -202,6 +233,11 @@ export default function App() {
               case 'expenses': setExpenses(data); saveToLocal('expenses', data); break;
               case 'qualityTests': setQualityTests(data); saveToLocal('qualityTests', data); break;
               case 'closureStatus': setClosureStatus(data); saveToLocal('closureStatus', data); break;
+              case 'journalRecords': setJournalRecords(data); saveToLocal('journalRecords', data); break;
+              case 'journalConfig': setJournalConfig(data); saveToLocal('journalConfig', data); break;
+              case 'clientAccounts': setClientAccounts(data); saveToLocal('clientAccounts', data); break;
+              case 'creditTransactions': setCreditTransactions(data); saveToLocal('creditTransactions', data); break;
+              case 'maintenanceIncidents': setMaintenanceIncidents(data); saveToLocal('maintenanceIncidents', data); break;
             }
           } else {
             let currentLocalVal: any = null;
@@ -220,6 +256,11 @@ export default function App() {
               case 'expenses': currentLocalVal = currentExpenses; break;
               case 'qualityTests': currentLocalVal = currentQualityTests; break;
               case 'closureStatus': currentLocalVal = currentClosureStatus; break;
+              case 'journalRecords': currentLocalVal = currentJournalRecords; break;
+              case 'journalConfig': currentLocalVal = currentJournalConfig; break;
+              case 'clientAccounts': currentLocalVal = currentClientAccounts; break;
+              case 'creditTransactions': currentLocalVal = currentCreditTransactions; break;
+              case 'maintenanceIncidents': currentLocalVal = currentMaintenanceIncidents; break;
             }
             if (currentLocalVal !== null) {
               keysToInitialize.push({ key, val: currentLocalVal });
@@ -252,13 +293,15 @@ export default function App() {
       const keys = [
         'fuels', 'pumps', 'tanks', 'deliveries', 'shopProducts', 'shopSales', 
         'carWash', 'oilChanges', 'employees', 'shifts', 'cashRegisters', 
-        'expenses', 'qualityTests', 'closureStatus'
+        'expenses', 'qualityTests', 'closureStatus', 'journalRecords', 'journalConfig',
+        'clientAccounts', 'creditTransactions', 'maintenanceIncidents'
       ];
       
       const values = [
         fuels, pumps, tanks, deliveries, shopProducts, shopSales, 
         carWash, oilChanges, employees, shifts, cashRegisters, 
-        expenses, qualityTests, closureStatus
+        expenses, qualityTests, closureStatus, journalRecords, journalConfig,
+        clientAccounts, creditTransactions, maintenanceIncidents
       ];
 
       await Promise.all(keys.map((key, i) => saveStateToSupabase(key, values[i])));
@@ -310,6 +353,11 @@ export default function App() {
     const initExpenses = getLocal('expenses', INITIAL_EXPENSES);
     const initQualityTests = getLocal('qualityTests', INITIAL_QUALITY_TESTS);
     const initClosureStatus = getLocal('closureStatus', 'En cours') as 'En cours' | 'Clôturé';
+    const initJournalRecords = getLocal('journalRecords', INITIAL_JOURNAL_RECORDS);
+    const initJournalConfig = getLocal('journalConfig', DEFAULT_JOURNAL_CONFIG);
+    const initClientAccounts = getLocal('clientAccounts', INITIAL_CLIENT_ACCOUNTS);
+    const initCreditTransactions = getLocal('creditTransactions', INITIAL_CREDIT_TRANSACTIONS);
+    const initMaintenanceIncidents = getLocal('maintenanceIncidents', INITIAL_MAINTENANCE_INCIDENTS);
 
     setFuels(initFuels);
     setPumps(initPumps);
@@ -325,12 +373,18 @@ export default function App() {
     setExpenses(initExpenses);
     setQualityTests(initQualityTests);
     setClosureStatus(initClosureStatus);
+    setJournalRecords(initJournalRecords);
+    setJournalConfig(initJournalConfig);
+    setClientAccounts(initClientAccounts);
+    setCreditTransactions(initCreditTransactions);
+    setMaintenanceIncidents(initMaintenanceIncidents);
 
     if (isSupabaseConfigured()) {
       pullFromSupabase(
         initFuels, initPumps, initTanks, initDeliveries, initShopProducts, initShopSales,
         initCarWash, initOilChanges, initEmployees, initShifts, initCashRegisters,
-        initExpenses, initQualityTests, initClosureStatus
+        initExpenses, initQualityTests, initClosureStatus, initJournalRecords, initJournalConfig,
+        initClientAccounts, initCreditTransactions, initMaintenanceIncidents
       );
     }
   }, []);
@@ -420,6 +474,36 @@ export default function App() {
     triggerCloudSync('closureStatus', status);
   };
 
+  const updateJournalRecordsState = (newRecords: JournalRecord[]) => {
+    setJournalRecords(newRecords);
+    saveToLocal('journalRecords', newRecords);
+    triggerCloudSync('journalRecords', newRecords);
+  };
+
+  const updateJournalConfigState = (newConfig: JournalConfig) => {
+    setJournalConfig(newConfig);
+    saveToLocal('journalConfig', newConfig);
+    triggerCloudSync('journalConfig', newConfig);
+  };
+
+  const updateClientAccountsState = (newAccs: ClientAccount[]) => {
+    setClientAccounts(newAccs);
+    saveToLocal('clientAccounts', newAccs);
+    triggerCloudSync('clientAccounts', newAccs);
+  };
+
+  const updateCreditTransactionsState = (newTxs: CreditTransaction[]) => {
+    setCreditTransactions(newTxs);
+    saveToLocal('creditTransactions', newTxs);
+    triggerCloudSync('creditTransactions', newTxs);
+  };
+
+  const updateMaintenanceIncidentsState = (newIncs: MaintenanceIncident[]) => {
+    setMaintenanceIncidents(newIncs);
+    saveToLocal('maintenanceIncidents', newIncs);
+    triggerCloudSync('maintenanceIncidents', newIncs);
+  };
+
   // --- API STATE CONTROLLER ACTIONS ---
 
   // Reset helper
@@ -441,6 +525,11 @@ export default function App() {
       updateExpensesState(INITIAL_EXPENSES);
       updateQualityTestsState(INITIAL_QUALITY_TESTS);
       updateClosureStatusState('En cours');
+      updateJournalRecordsState(INITIAL_JOURNAL_RECORDS);
+      updateJournalConfigState(DEFAULT_JOURNAL_CONFIG);
+      updateClientAccountsState(INITIAL_CLIENT_ACCOUNTS);
+      updateCreditTransactionsState(INITIAL_CREDIT_TRANSACTIONS);
+      updateMaintenanceIncidentsState(INITIAL_MAINTENANCE_INCIDENTS);
       alert("Données d'origine réimportées avec succès !");
       setActiveTab('dashboard');
     }
@@ -843,6 +932,154 @@ export default function App() {
     updateQualityTestsState(updated);
   };
 
+  // 20. Action Handlers for Journal
+  const handleAddJournalRecord = (record: JournalRecord) => {
+    updateJournalRecordsState([record, ...journalRecords]);
+  };
+
+  const handleUpdateJournalRecord = (record: JournalRecord) => {
+    const updated = journalRecords.map(r => r.id === record.id ? record : r);
+    updateJournalRecordsState(updated);
+  };
+
+  const handleDeleteJournalRecord = (id: string) => {
+    const updated = journalRecords.filter(r => r.id !== id);
+    updateJournalRecordsState(updated);
+  };
+
+  const handleUpdateJournalConfig = (newConfig: JournalConfig) => {
+    updateJournalConfigState(newConfig);
+  };
+
+  // 21. Action Handlers for Credits B2B & Accounts
+  const handleAddClientAccount = (account: ClientAccount) => {
+    updateClientAccountsState([...clientAccounts, account]);
+  };
+
+  const handleDeleteClientAccount = (id: string) => {
+    const updated = clientAccounts.filter(c => c.id !== id);
+    updateClientAccountsState(updated);
+    
+    // Cascading delete the associated transactions as well to avoid inconsistency
+    const updatedTxs = creditTransactions.filter(t => t.clientId !== id);
+    updateCreditTransactionsState(updatedTxs);
+  };
+
+  const handleAddCreditTransaction = (tx: CreditTransaction) => {
+    // 1. Appended new transaction
+    updateCreditTransactionsState([tx, ...creditTransactions]);
+
+    // 2. Adjust client account balance (totalCreditDetails) in real-time
+    const updatedAccounts = clientAccounts.map(cl => {
+      if (cl.id === tx.clientId) {
+        const diff = tx.type === 'Achat Crédit' ? tx.amount : -tx.amount;
+        return {
+          ...cl,
+          totalCreditDetails: cl.totalCreditDetails + diff,
+          lastOperationDate: tx.date
+        };
+      }
+      return cl;
+    });
+    updateClientAccountsState(updatedAccounts);
+    
+    // 3. For payments: generate a cash receipt and balance it out with the actual registers as an offset / input
+    if (tx.type === 'Règlement / Paiement') {
+      const paymentMethodMapped: string = tx.paymentMethod || 'Espèces';
+      const updatedRegisters = cashRegisters.map(register => {
+        // Adjust the specified register balance
+        if (register.method === paymentMethodMapped) {
+          return {
+            ...register,
+            currentBalance: register.currentBalance + tx.amount
+          };
+        }
+        return register;
+      });
+      updateCashRegistersState(updatedRegisters);
+    }
+  };
+
+  const handleDeleteCreditTransaction = (id: string) => {
+    const txToDelete = creditTransactions.find(t => t.id === id);
+    if (!txToDelete) return;
+
+    // 1. Remove transaction
+    const updatedTxs = creditTransactions.filter(t => t.id !== id);
+    updateCreditTransactionsState(updatedTxs);
+
+    // 2. Re-adjust and correct client accounts balance
+    const updatedAccounts = clientAccounts.map(cl => {
+      if (cl.id === txToDelete.clientId) {
+        // Subtract or add in reverse
+        const diff = txToDelete.type === 'Achat Crédit' ? -txToDelete.amount : txToDelete.amount;
+        return {
+          ...cl,
+          totalCreditDetails: Math.max(0, cl.totalCreditDetails + diff)
+        };
+      }
+      return cl;
+    });
+    updateClientAccountsState(updatedAccounts);
+
+    // 3. If it is high-level payment, reverse from registers
+    if (txToDelete.type === 'Règlement / Paiement') {
+      const paymentMethodMapped = txToDelete.paymentMethod || 'Espèces';
+      const updatedRegisters = cashRegisters.map(register => {
+        if (register.method === paymentMethodMapped) {
+          return {
+            ...register,
+            currentBalance: Math.max(0, register.currentBalance - txToDelete.amount)
+          };
+        }
+        return register;
+      });
+      updateCashRegistersState(updatedRegisters);
+    }
+  };
+
+  // 22. Action Handlers for Maintenance & Incidents
+  const handleAddMaintenanceIncident = (inc: MaintenanceIncident) => {
+    const updated = [inc, ...maintenanceIncidents];
+    updateMaintenanceIncidentsState(updated);
+  };
+
+  const handleUpdateMaintenanceIncident = (inc: MaintenanceIncident) => {
+    const updated = maintenanceIncidents.map(i => i.id === inc.id ? inc : i);
+    updateMaintenanceIncidentsState(updated);
+
+    // If an incident has custom expenses related (resolved with non-zero cost), auto-log it under station expense sheets in real-time
+    if (inc.status === 'Résolu' && inc.cost > 0) {
+      // Auto-log cost
+      const autoExpense: Expense = {
+        id: `exp_m_${inc.id}_${Date.now()}`,
+        requestedBy: 'Gérant (Maintenance)',
+        amount: inc.cost,
+        category: 'Entretien',
+        description: `Résolution panne : ${inc.deviceName}. ${inc.description.slice(0, 50)}...`,
+        status: 'Approuvé',
+        date: inc.resolvedDate || new Date().toISOString().split('T')[0]
+      };
+      
+      const updatedExps = [autoExpense, ...expenses];
+      updateExpensesState(updatedExps);
+
+      // Deduct from Espèces register balance like any standard expense approval
+      const updatedCash = cashRegisters.map(cr => {
+        if (cr.method === 'Espèces') {
+          return { ...cr, currentBalance: Math.max(0, cr.currentBalance - inc.cost) };
+        }
+        return cr;
+      });
+      updateCashRegistersState(updatedCash);
+    }
+  };
+
+  const handleDeleteMaintenanceIncident = (id: string) => {
+    const updated = maintenanceIncidents.filter(i => i.id !== id);
+    updateMaintenanceIncidentsState(updated);
+  };
+
   // Navigation router selector
   const renderCurrentView = () => {
     switch (activeTab) {
@@ -942,9 +1179,41 @@ export default function App() {
             closureStatus={closureStatus}
           />
         );
+      case 'journal':
+        return (
+          <JournalView 
+            records={journalRecords}
+            config={journalConfig}
+            employees={employees}
+            onAddRecord={handleAddJournalRecord}
+            onUpdateRecord={handleUpdateJournalRecord}
+            onDeleteRecord={handleDeleteJournalRecord}
+            onUpdateConfig={handleUpdateJournalConfig}
+          />
+        );
       case 'reports':
         return (
           <ReportsView />
+        );
+      case 'credits':
+        return (
+          <CreditsView 
+            accounts={clientAccounts}
+            transactions={creditTransactions}
+            onAddAccount={handleAddClientAccount}
+            onDeleteAccount={handleDeleteClientAccount}
+            onAddTransaction={handleAddCreditTransaction}
+            onDeleteTransaction={handleDeleteCreditTransaction}
+          />
+        );
+      case 'maintenance':
+        return (
+          <MaintenanceView 
+            incidents={maintenanceIncidents}
+            onAddIncident={handleAddMaintenanceIncident}
+            onUpdateIncident={handleUpdateMaintenanceIncident}
+            onDeleteIncident={handleDeleteMaintenanceIncident}
+          />
         );
       default:
         return <div className="p-8 text-center text-slate-500">Vue non disponible</div>;
@@ -1008,6 +1277,7 @@ export default function App() {
               iconColor: "text-rose-400",
               items: [
                 { id: 'caisse', label: 'Caisse & Dépenses', icon: <Coins className="w-4 h-4" /> },
+                { id: 'journal', label: 'Journal de Station', icon: <FileText className="w-4 h-4" /> },
                 { id: 'cloture', label: 'Clôture de Jour', icon: <Lock className="w-4 h-4" /> },
               ]
             },
@@ -1018,6 +1288,16 @@ export default function App() {
               iconColor: "text-purple-400",
               items: [
                 { id: 'employees', label: 'Personnel & Shifts', icon: <Users className="w-4 h-4" /> },
+              ]
+            },
+            {
+              category: "Logistique & Gérance (Pro)",
+              headerClass: "text-amber-500 bg-amber-950/25 border-l-2 border-amber-600/70",
+              btnActive: "bg-slate-800/80 text-white border-r-4 border-amber-500",
+              iconColor: "text-amber-400",
+              items: [
+                { id: 'credits', label: 'Crédits Clients B2B', icon: <CreditCard className="w-4 h-4" /> },
+                { id: 'maintenance', label: 'Maintenance & Pannes', icon: <Wrench className="w-4 h-4" /> },
               ]
             }
           ].map((rubric, idx) => (
@@ -1198,6 +1478,7 @@ export default function App() {
                   iconColor: "text-rose-450 text-rose-400",
                   items: [
                     { id: 'caisse', label: 'Caisse & Dépenses', icon: <Coins className="w-4 h-4" /> },
+                    { id: 'journal', label: 'Journal de Station', icon: <FileText className="w-4 h-4" /> },
                     { id: 'cloture', label: 'Clôture de Jour', icon: <Lock className="w-4 h-4" /> },
                   ]
                 },
@@ -1208,6 +1489,16 @@ export default function App() {
                   iconColor: "text-purple-450 text-purple-400",
                   items: [
                     { id: 'employees', label: 'Personnel & Shifts', icon: <Users className="w-4 h-4" /> },
+                  ]
+                },
+                {
+                  category: "Logistique & Gérance (Pro)",
+                  headerClass: "text-amber-500 bg-amber-950/25 border-l-2 border-amber-600/70",
+                  btnActive: "bg-slate-800/80 text-white border-l-4 border-amber-500",
+                  iconColor: "text-amber-450 text-amber-400",
+                  items: [
+                    { id: 'credits', label: 'Crédits Clients B2B', icon: <CreditCard className="w-4 h-4" /> },
+                    { id: 'maintenance', label: 'Maintenance & Pannes', icon: <Wrench className="w-4 h-4" /> },
                   ]
                 }
               ].map((rubric, idx) => (
@@ -1410,7 +1701,7 @@ WITH CHECK (true);`}
                 <>
                   <button
                     type="button"
-                    onClick={() => pullFromSupabase(fuels, pumps, tanks, deliveries, shopProducts, shopSales, carWash, oilChanges, employees, shifts, cashRegisters, expenses, qualityTests, closureStatus)}
+                    onClick={() => pullFromSupabase(fuels, pumps, tanks, deliveries, shopProducts, shopSales, carWash, oilChanges, employees, shifts, cashRegisters, expenses, qualityTests, closureStatus, journalRecords, journalConfig, clientAccounts, creditTransactions, maintenanceIncidents)}
                     disabled={supabaseStatus.loading}
                     className="px-3.5 py-1.5 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-800 font-bold cursor-pointer disabled:opacity-50"
                   >

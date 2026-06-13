@@ -12,7 +12,12 @@ import {
   CashRegister, 
   Expense, 
   DailyReport,
-  FuelQualityTest
+  FuelQualityTest,
+  JournalRecord,
+  JournalConfig,
+  ClientAccount,
+  CreditTransaction,
+  MaintenanceIncident
 } from './types';
 
 // Standard rates of margins or pricing to make math dynamic
@@ -217,3 +222,192 @@ export const MONTHLY_TRENDS = [
   { month: 'Mai', carburant: 155000, boutique: 24500, services: 12500 },
   { month: 'Juin', carburant: 168000, boutique: 27000, services: 14800 },
 ];
+
+export const DEFAULT_JOURNAL_CONFIG: JournalConfig = {
+  col1Title: "Entretien & Dépenses",
+  col2Title: "Dépôts & Avance",
+  col3Title: "Gazole / Carburant",
+  col4Title: "Autres / Péages"
+};
+
+export const INITIAL_JOURNAL_RECORDS: JournalRecord[] = [
+  {
+    id: 'jr1',
+    date: '2026-06-11',
+    camionNo: 'LT 1928 A',
+    chauffeur: 'Jean-Marc Koffi',
+    col1Pos: 125000,
+    col1Neg: 15000,
+    col2Pos: 400000,
+    col2Neg: 50000,
+    col3Pos: 180000,
+    col3Neg: 0,
+    col4Pos: 25000,
+    col4Neg: 5000,
+    destination: 'Douala - Yaoundé'
+  },
+  {
+    id: 'jr2',
+    date: '2026-06-12',
+    camionNo: 'OU 4421 B',
+    chauffeur: 'Ousmane Sow',
+    col1Pos: 45000,
+    col1Neg: 0,
+    col2Pos: 350000,
+    col2Neg: 30000,
+    col3Pos: 150000,
+    col3Neg: 15000,
+    col4Pos: 12000,
+    col4Neg: 2000,
+    destination: 'Kribi - Douala'
+  },
+  {
+    id: 'jr3',
+    date: '2026-06-13',
+    camionNo: 'LT 0588 C',
+    chauffeur: 'Koffi Paul',
+    col1Pos: 0,
+    col1Neg: 35000,
+    col2Pos: 250000,
+    col2Neg: 0,
+    col3Pos: 220000,
+    col3Neg: 0,
+    col4Pos: 30000,
+    col4Neg: 8000,
+    destination: 'Bafoussam - Douala'
+  }
+];
+
+export const INITIAL_CLIENT_ACCOUNTS: ClientAccount[] = [
+  {
+    id: 'cli1',
+    companyName: 'Trans-Est Cameroun S.A.',
+    contactName: 'M. Ndongo Dieudonné',
+    phoneNumber: '+237 699 88 77 66',
+    creditLimit: 5000000,
+    totalCreditDetails: 1450000,
+    lastOperationDate: '2026-06-12'
+  },
+  {
+    id: 'cli2',
+    companyName: 'Société Forestière du Littoral',
+    contactName: 'Mme. Biya Marthe',
+    phoneNumber: '+237 677 55 44 33',
+    creditLimit: 10000000,
+    totalCreditDetails: 3200000,
+    lastOperationDate: '2026-06-13'
+  },
+  {
+    id: 'cli3',
+    companyName: 'Boulangerie Centrale de Douala',
+    contactName: 'M. Tagne Samuel',
+    phoneNumber: '+237 655 22 11 00',
+    creditLimit: 3000000,
+    totalCreditDetails: 450000,
+    lastOperationDate: '2026-06-10'
+  }
+];
+
+export const INITIAL_CREDIT_TRANSACTIONS: CreditTransaction[] = [
+  {
+    id: 'ctx1',
+    clientId: 'cli1',
+    date: '2026-06-11',
+    type: 'Achat Crédit',
+    amount: 650000,
+    fuelType: 'Gasoil',
+    volumeLiters: 1000,
+    couponNumber: 'BON-TEC-0092',
+    driverName: 'Kamdem Lucas',
+    plates: 'LT 8892 B',
+    notes: 'Ravitaillement tracteur lourd direction Yaoundé'
+  },
+  {
+    id: 'ctx2',
+    clientId: 'cli2',
+    date: '2026-06-12',
+    type: 'Achat Crédit',
+    amount: 1200000,
+    fuelType: 'Gasoil',
+    volumeLiters: 1800,
+    couponNumber: 'BON-SFL-452',
+    driverName: 'Amadou Ibrahim',
+    plates: 'OU 0233 A',
+    notes: 'Approvisionnement grumier voyage de Kribi'
+  },
+  {
+    id: 'ctx3',
+    clientId: 'cli1',
+    date: '2026-06-12',
+    type: 'Règlement / Paiement',
+    amount: 400000,
+    paymentMethod: 'Virement',
+    notes: 'Règlement partiel factures mai par virement Afriland'
+  },
+  {
+    id: 'ctx4',
+    clientId: 'cli3',
+    date: '2026-06-10',
+    type: 'Achat Crédit',
+    amount: 450000,
+    fuelType: 'Super',
+    volumeLiters: 600,
+    couponNumber: 'BON-BCD-012',
+    driverName: 'Fouda Pierre',
+    plates: 'LT 1234 A',
+    notes: 'Ravitaillement camionnette de livraison'
+  }
+];
+
+export const INITIAL_MAINTENANCE_INCIDENTS: MaintenanceIncident[] = [
+  {
+    id: 'm1',
+    deviceName: 'Pompe N°2 - Volucompteur Gazole',
+    category: 'Pompes & Pistolets',
+    reportedDate: '2026-06-10',
+    description: 'Baisse de pression anormale et débit très lent sur le pistolet B.',
+    status: 'En cours de réparation',
+    priority: 'Élevée',
+    technicianName: 'Ets Lucien & Fils Hydraulique',
+    cost: 75000,
+    notes: 'Changement de filtre interne et test de calage prévu ce soir.'
+  },
+  {
+    id: 'm2',
+    deviceName: 'Groupe Électrogène Caterpillar 150kVA',
+    category: 'Électricité & Groupe',
+    reportedDate: '2026-06-05',
+    resolvedDate: '2026-06-06',
+    description: 'Vidange complète périodique, changement filtre à huile et filtre à gazole.',
+    status: 'Résolu',
+    priority: 'Critique',
+    technicianName: 'Cameroun Énergie Service',
+    cost: 180000,
+    notes: 'Opération effectuée avec succès. Autonomie opérationnelle garantie pour les coupures de la société d\'électricité.'
+  },
+  {
+    id: 'm3',
+    deviceName: 'Extincteurs CO2 50kg (Ilot Central)',
+    category: 'Sécurité & Incendie',
+    reportedDate: '2026-06-12',
+    description: 'Recharge annuelle réglementaire et contrôle de pression des 4 extincteurs lourds mobiles.',
+    status: 'Planifié/Maintenance',
+    priority: 'Élevée',
+    technicianName: 'Securifix Cameroun',
+    cost: 120000,
+    notes: 'Rendez-vous programmée pour le 18 juin. Conforme aux assurances.'
+  },
+  {
+    id: 'm4',
+    deviceName: 'Caméra d\'Angle Entrée Boutique',
+    category: 'Informatique & Caméras',
+    reportedDate: '2026-06-13',
+    description: 'Perte de signal vidéo intermittent sur le moniteur de surveillance principal.',
+    status: 'Signalé',
+    priority: 'Moyenne',
+    cost: 0,
+    notes: 'Vérifier le câble RJ45 POE au niveau du switch de bureau.'
+  }
+];
+
+

@@ -196,3 +196,78 @@ export interface FuelQualityTest {
   notes?: string;
 }
 
+// Journal de Station (Camions & Route)
+export interface JournalRecord {
+  id: string;
+  date: string;
+  camionNo: string;
+  chauffeur: string;
+  
+  // 4 dynamic column groups with '+' and '-' fields
+  col1Pos: number; // e.g. + of Entretien Et Dépense
+  col1Neg: number; // e.g. - of Entretien Et Dépense
+  
+  col2Pos: number; // e.g. + of Dépôt & Avance
+  col2Neg: number; // e.g. - of Dépôt & Avance
+  
+  col3Pos: number; // e.g. + of Carburant
+  col3Neg: number; // e.g. - of Carburant
+  
+  col4Pos: number; // e.g. + of Divers / Péages
+  col4Neg: number; // e.g. - of Divers / Péages
+  
+  destination: string;
+}
+
+export interface JournalConfig {
+  col1Title: string;
+  col2Title: string;
+  col3Title: string;
+  col4Title: string;
+}
+
+// --- NEW FEATURES REQUESTED FOR MANAGER / GENERAL MANAGEMENT ---
+
+// 1. Credit Client Accounts & fuel coupon system (Comptes Clients & Bons de Carburant)
+export interface ClientAccount {
+  id: string;
+  companyName: string;
+  contactName: string;
+  phoneNumber: string;
+  creditLimit: number;
+  totalCreditDetails: number; // Current balance owed (purchases - payments)
+  lastOperationDate: string;
+}
+
+export interface CreditTransaction {
+  id: string;
+  clientId: string;
+  date: string;
+  type: 'Achat Crédit' | 'Règlement / Paiement';
+  amount: number;
+  paymentMethod?: 'Espèces' | 'Chèque' | 'Virement' | 'Mobile Money';
+  fuelType?: FuelType;
+  volumeLiters?: number;
+  couponNumber?: string; // N° de bon
+  driverName?: string; // Nom du chauffeur du client
+  plates?: string; // Matricule du véhicule du client
+  notes?: string;
+}
+
+// 2. Incident Registration & Maintenance of station devices (Équipements & Maintenance)
+export interface MaintenanceIncident {
+  id: string;
+  deviceName: string; // e.g. "Pompe 1 - Super", "Groupe Électrogène", "Tirant d'Air Cuve 2", "Compresseur"
+  category: 'Pompes & Pistolets' | 'Électricité & Groupe' | 'Sécurité & Incendie' | 'Bâtiment & Réseau' | 'Informatique & Caméras';
+  reportedDate: string;
+  resolvedDate?: string;
+  description: string;
+  status: 'Signalé' | 'En cours de réparation' | 'Résolu' | 'Planifié/Maintenance';
+  priority: 'Basse' | 'Moyenne' | 'Élevée' | 'Critique';
+  technicianName?: string; // Prestataire ou technicien
+  cost: number; // Maintenance costs
+  notes?: string;
+}
+
+
+
