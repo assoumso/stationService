@@ -692,6 +692,14 @@ export default function App() {
     updatePumpsState(updated);
   };
 
+  const handleDeletePump = (id: string) => {
+    const confirmDelete = window.confirm("Êtes-vous sûr de vouloir supprimer cette pompe/index ?");
+    if (confirmDelete) {
+      const updated = pumps.filter(p => p.id !== id);
+      updatePumpsState(updated);
+    }
+  };
+
   // 6. Sell product in Shop (Boutique)
   const handleSellProduct = (productId: string, quantity: number) => {
     const targetProd = shopProducts.find(p => p.id === productId);
@@ -1139,6 +1147,7 @@ export default function App() {
             fuelPrices={fuelPrices}
             onUpdatePumpIndices={handleUpdatePumpIndices}
             onAddPump={handleAddPump}
+            onDeletePump={handleDeletePump}
           />
         );
       case 'boutique':

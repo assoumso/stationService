@@ -17,6 +17,7 @@ interface PumpsViewProps {
   pumps: Pump[];
   onUpdatePumpIndices: (id: string, startIndex: number, endIndex: number) => void;
   onAddPump: (pump: Omit<Pump, 'id' | 'volumeSold' | 'lastUpdated'>) => void;
+  onDeletePump: (id: string) => void;
   fuelPrices: Record<string, { buy: number; sell: number }>;
 }
 
@@ -24,6 +25,7 @@ export default function PumpsView({
   pumps,
   onUpdatePumpIndices,
   onAddPump,
+  onDeletePump,
   fuelPrices
 }: PumpsViewProps) {
   // New pump configuration form state
@@ -146,6 +148,13 @@ export default function PumpsView({
                             <span className="text-[9px] bg-slate-200 font-bold px-1.5 py-0.5 rounded text-slate-800 uppercase">
                               {pump.fuelType}
                             </span>
+                            <button 
+                              onClick={() => onDeletePump(pump.id)} 
+                              className="text-red-400 hover:text-red-600 bg-red-50 hover:bg-red-100 p-1 rounded-full transition-colors ml-1"
+                              title="Supprimer la pompe"
+                            >
+                              <Trash2 className="w-3 h-3" />
+                            </button>
                           </div>
                           <p className="text-[10px] text-slate-500 mt-1">{pump.nozzlesCount} pistolets actifs</p>
                         </div>
