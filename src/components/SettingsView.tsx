@@ -143,6 +143,46 @@ export default function SettingsView({ fuelPrices, onSaveFuelPrices }: SettingsV
         </div>
       </div>
 
+      {/* ── STICKY FLOATING SAVE BAR (visible quand modifications en attente) ── */}
+      {hasChanges && (
+        <div
+          className="fixed bottom-5 left-1/2 -translate-x-1/2 z-50 flex items-center gap-3 px-5 py-3 rounded-2xl shadow-2xl border border-amber-200 bg-amber-50/95 backdrop-blur-sm animate-in slide-in-from-bottom-4 fade-in duration-300"
+          style={{ maxWidth: '90vw' }}
+        >
+          <AlertTriangle className="w-4 h-4 text-amber-600 shrink-0" />
+          <span className="text-xs font-semibold text-amber-900">
+            Modifications non sauvegardées
+          </span>
+          <div className="flex items-center gap-2 ml-2">
+            <button
+              type="button"
+              onClick={handleReset}
+              className="inline-flex items-center gap-1 px-3 py-1.5 text-xs font-semibold rounded-lg border border-amber-300 bg-white text-amber-800 hover:bg-amber-50 transition-colors"
+            >
+              <X className="w-3 h-3" />
+              Annuler
+            </button>
+            <button
+              type="button"
+              onClick={handleSaveAll}
+              disabled={saveStatus === 'saving'}
+              className={`inline-flex items-center gap-1.5 px-4 py-1.5 text-xs font-bold rounded-lg transition-all shadow-sm ${
+                saveStatus === 'saving'
+                  ? 'bg-orange-400 text-white cursor-wait'
+                  : 'bg-orange-600 hover:bg-orange-700 text-white'
+              }`}
+            >
+              {saveStatus === 'saving' ? (
+                <RefreshCw className="w-3 h-3 animate-spin" />
+              ) : (
+                <Save className="w-3 h-3" />
+              )}
+              {saveStatus === 'saving' ? 'Sauvegarde...' : 'Enregistrer maintenant'}
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Info banner */}
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-start gap-3 text-xs text-blue-900">
         <Info className="w-4 h-4 text-blue-500 shrink-0 mt-0.5" />
@@ -156,13 +196,7 @@ export default function SettingsView({ fuelPrices, onSaveFuelPrices }: SettingsV
         </div>
       </div>
 
-      {/* Status indicator if changes pending */}
-      {hasChanges && (
-        <div className="bg-amber-50 border border-amber-200 rounded-xl px-4 py-3 flex items-center gap-2 text-xs text-amber-800 font-semibold animate-pulse">
-          <AlertTriangle className="w-4 h-4 text-amber-600" />
-          Modifications non sauvegardées — Cliquez sur "Enregistrer les modifications" pour les appliquer.
-        </div>
-      )}
+      {/* Status indicator if changes pending (supprimé - remplacé par la barre flottante sticky) */}
 
       {/* Fuel Prices Grid */}
       <div>
