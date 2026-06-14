@@ -60,7 +60,7 @@ export default function SettingsView({ fuelPrices, onSaveFuelPrices }: SettingsV
 
   const handleSaveAll = async () => {
     // Basic validation: sell must be >= buy
-    for (const [fuel, prices] of Object.entries(draft)) {
+    for (const [fuel, prices] of Object.entries(draft) as [string, { buy: number; sell: number }][]) {
       if (prices.sell < prices.buy) {
         alert(`⚠️ Erreur : Le prix de vente du "${fuel}" ne peut pas être inférieur au prix d'achat !`);
         return;
@@ -205,7 +205,7 @@ export default function SettingsView({ fuelPrices, onSaveFuelPrices }: SettingsV
           Prix Unitaires des Carburants & Produits
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
-          {Object.entries(draft).map(([fuel, prices]) => {
+          {(Object.entries(draft) as [string, { buy: number; sell: number }][]).map(([fuel, prices]) => {
             const colors = FUEL_COLORS[fuel] || FUEL_COLORS['Super'];
             const unit = UNIT_LABELS[fuel] || 'FCFA/L';
             const margin = prices.sell - prices.buy;
@@ -365,7 +365,7 @@ export default function SettingsView({ fuelPrices, onSaveFuelPrices }: SettingsV
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100">
-              {Object.entries(draft).map(([fuel, prices]) => {
+              {(Object.entries(draft) as [string, { buy: number; sell: number }][]).map(([fuel, prices]) => {
                 const margin = prices.sell - prices.buy;
                 const marginPct = prices.buy > 0 ? ((margin / prices.buy) * 100) : 0;
                 const changed = prices.buy !== fuelPrices[fuel]?.buy || prices.sell !== fuelPrices[fuel]?.sell;

@@ -183,7 +183,7 @@ export default function App() {
     }
   };
 
-  // Pull all states from Supabase (including auto-seeding if empty)
+  // Pull all states from Supabase (Supabase est la source de vérité)
   const pullFromSupabase = async (
     currentFuels: FuelStock[],
     currentPumps: Pump[],
@@ -218,6 +218,15 @@ export default function App() {
       });
 
       if (conn.connected && conn.schemaExists) {
+        // 1. Vérifier si station_store a déjà des enregistrements
+        //    → si oui, Supabase est la source de vérité, on lit et on met à jour le state local
+        //    → si non (installation fraîche), on initialise Supabase avec les données locales
+        const { count: existingCount } = await supabase!
+          .from('station_store')
+          .select('id', { count: 'exact', head: true });
+
+        const isFreshInstall = !existingCount || (existingCount as any) === 0;
+
         const keys = [
           'fuels', 'pumps', 'tanks', 'deliveries', 'shopProducts', 'shopSales', 
           'carWash', 'oilChanges', 'employees', 'shifts', 'cashRegisters', 
@@ -226,11 +235,12 @@ export default function App() {
         ];
 
         const results = await Promise.all(keys.map(k => loadStateFromSupabase(k)));
-        const keysToInitialize: { key: string; val: any }[] = [];
+        const keysToSeed: { key: string; val: any }[] = [];
 
         results.forEach((data, index) => {
           const key = keys[index];
           if (data !== null) {
+            // ✅ Supabase a des données → mettre à jour le state local (Supabase prime)
             switch (key) {
               case 'fuels': setFuels(data); saveToLocal('fuels', data); break;
               case 'pumps': setPumps(data); saveToLocal('pumps', data); break;
@@ -253,7 +263,8 @@ export default function App() {
               case 'maintenanceIncidents': setMaintenanceIncidents(data); saveToLocal('maintenanceIncidents', data); break;
               case 'fuelPrices': setFuelPrices(data); saveToLocal('fuelPrices', data); break;
             }
-          } else {
+          } else if (isFreshInstall) {
+            // ⚠️ Supabase vide (première installation) → initialiser avec les données locales
             let currentLocalVal: any = null;
             switch (key) {
               case 'fuels': currentLocalVal = currentFuels; break;
@@ -278,18 +289,19 @@ export default function App() {
               case 'fuelPrices': currentLocalVal = currentFuelPrices; break;
             }
             if (currentLocalVal !== null) {
-              keysToInitialize.push({ key, val: currentLocalVal });
+              keysToSeed.push({ key, val: currentLocalVal });
             }
           }
         });
 
-        if (keysToInitialize.length > 0) {
-          await Promise.all(keysToInitialize.map(item => saveStateToSupabase(item.key, item.val)));
+        // Initialisation Supabase uniquement si c'est une installation fraîche
+        if (keysToSeed.length > 0 && isFreshInstall) {
+          await Promise.all(keysToSeed.map(item => saveStateToSupabase(item.key, item.val)));
         }
 
         setSyncHistory({
           lastPullTime: new Date().toLocaleTimeString('fr-FR'),
-          lastPushTime: keysToInitialize.length > 0 ? new Date().toLocaleTimeString('fr-FR') : null,
+          lastPushTime: keysToSeed.length > 0 ? new Date().toLocaleTimeString('fr-FR') : null,
           pendingCount: 0
         });
       }
@@ -1775,7 +1787,7 @@ WITH CHECK (true);`}
                 <>
                   <button
                     type="button"
-                    onClick={() => pullFromSupabase(fuels, pumps, tanks, deliveries, shopProducts, shopSales, carWash, oilChanges, employees, shifts, cashRegisters, expenses, qualityTests, closureStatus, journalRecords, journalConfig, clientAccounts, creditTransactions, maintenanceIncidents)}
+                    onClick={() => pullFromSupabase(fuels, pumps, tanks, deliveries, shopProducts, shopSales, carWash, oilChanges, employees, shifts, cashRegisters, expenses, qualityTests, closureStatus, journalRecords, journalConfig, clientAccounts, creditTransactions, maintenanceIncidents, fuelPrices)}
                     disabled={supabaseStatus.loading}
                     className="px-3.5 py-1.5 rounded-xl border border-slate-200 hover:bg-slate-100 text-slate-800 font-bold cursor-pointer disabled:opacity-50"
                   >
