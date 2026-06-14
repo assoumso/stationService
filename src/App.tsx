@@ -170,16 +170,19 @@ export default function App() {
   };
 
   // Helper to sync state to Supabase in the background
-  const triggerCloudSync = async (key: string, value: any) => {
-    if (!isSupabaseConfigured()) return;
+  const triggerCloudSync = async (key: string, value: any): Promise<boolean> => {
+    if (!isSupabaseConfigured()) return true;
     const res = await saveStateToSupabase(key, value);
     if (res.success) {
       setSyncHistory(prev => ({
         ...prev,
         lastPushTime: new Date().toLocaleTimeString('fr-FR')
       }));
+      return true;
     } else {
       console.warn(`Sync failed for ${key}:`, res.error);
+      showNotification(`Erreur de synchronisation Cloud pour ${key}`, "error");
+      return false;
     }
   };
 
@@ -419,125 +422,145 @@ export default function App() {
   }, []);
 
   // --- Save states on change helpers (centralized for both local & Supabase) ---
-  const updateFuelsState = (newFuels: FuelStock[]) => {
-    setFuels(newFuels);
-    saveToLocal('fuels', newFuels);
-    triggerCloudSync('fuels', newFuels);
+  const updateFuelsState = async (newFuels: FuelStock[]) => {
+    if (await triggerCloudSync('fuels', newFuels)) {
+      setFuels(newFuels);
+      saveToLocal('fuels', newFuels);
+    }
   };
 
-  const updatePumpsState = (newPumps: Pump[]) => {
-    setPumps(newPumps);
-    saveToLocal('pumps', newPumps);
-    triggerCloudSync('pumps', newPumps);
+  const updatePumpsState = async (newPumps: Pump[]) => {
+    if (await triggerCloudSync('pumps', newPumps)) {
+      setPumps(newPumps);
+      saveToLocal('pumps', newPumps);
+    }
   };
 
-  const updateTanksState = (newTanks: Tank[]) => {
-    setTanks(newTanks);
-    saveToLocal('tanks', newTanks);
-    triggerCloudSync('tanks', newTanks);
+  const updateTanksState = async (newTanks: Tank[]) => {
+    if (await triggerCloudSync('tanks', newTanks)) {
+      setTanks(newTanks);
+      saveToLocal('tanks', newTanks);
+    }
   };
 
-  const updateDeliveriesState = (newDels: Delivery[]) => {
-    setDeliveries(newDels);
-    saveToLocal('deliveries', newDels);
-    triggerCloudSync('deliveries', newDels);
+  const updateDeliveriesState = async (newDels: Delivery[]) => {
+    if (await triggerCloudSync('deliveries', newDels)) {
+      setDeliveries(newDels);
+      saveToLocal('deliveries', newDels);
+    }
   };
 
-  const updateShopProductsState = (newProds: ShopProduct[]) => {
-    setShopProducts(newProds);
-    saveToLocal('shopProducts', newProds);
-    triggerCloudSync('shopProducts', newProds);
+  const updateShopProductsState = async (newProds: ShopProduct[]) => {
+    if (await triggerCloudSync('shopProducts', newProds)) {
+      setShopProducts(newProds);
+      saveToLocal('shopProducts', newProds);
+    }
   };
 
-  const updateShopSalesState = (newSales: ShopSale[]) => {
-    setShopSales(newSales);
-    saveToLocal('shopSales', newSales);
-    triggerCloudSync('shopSales', newSales);
+  const updateShopSalesState = async (newSales: ShopSale[]) => {
+    if (await triggerCloudSync('shopSales', newSales)) {
+      setShopSales(newSales);
+      saveToLocal('shopSales', newSales);
+    }
   };
 
-  const updateCarWashState = (newWashes: CarWashRecord[]) => {
-    setCarWash(newWashes);
-    saveToLocal('carWash', newWashes);
-    triggerCloudSync('carWash', newWashes);
+  const updateCarWashState = async (newWashes: CarWashRecord[]) => {
+    if (await triggerCloudSync('carWash', newWashes)) {
+      setCarWash(newWashes);
+      saveToLocal('carWash', newWashes);
+    }
   };
 
-  const updateOilChangesState = (newOils: OilChangeRecord[]) => {
-    setOilChanges(newOils);
-    saveToLocal('oilChanges', newOils);
-    triggerCloudSync('oilChanges', newOils);
+  const updateOilChangesState = async (newOils: OilChangeRecord[]) => {
+    if (await triggerCloudSync('oilChanges', newOils)) {
+      setOilChanges(newOils);
+      saveToLocal('oilChanges', newOils);
+    }
   };
 
-  const updateEmployeesState = (newEmps: Employee[]) => {
-    setEmployees(newEmps);
-    saveToLocal('employees', newEmps);
-    triggerCloudSync('employees', newEmps);
+  const updateEmployeesState = async (newEmps: Employee[]) => {
+    if (await triggerCloudSync('employees', newEmps)) {
+      setEmployees(newEmps);
+      saveToLocal('employees', newEmps);
+    }
   };
 
-  const updateShiftsState = (newShifts: Shift[]) => {
-    setShifts(newShifts);
-    saveToLocal('shifts', newShifts);
-    triggerCloudSync('shifts', newShifts);
+  const updateShiftsState = async (newShifts: Shift[]) => {
+    if (await triggerCloudSync('shifts', newShifts)) {
+      setShifts(newShifts);
+      saveToLocal('shifts', newShifts);
+    }
   };
 
-  const updateCashRegistersState = (newRegs: CashRegister[]) => {
-    setCashRegisters(newRegs);
-    saveToLocal('cashRegisters', newRegs);
-    triggerCloudSync('cashRegisters', newRegs);
+  const updateCashRegistersState = async (newRegs: CashRegister[]) => {
+    if (await triggerCloudSync('cashRegisters', newRegs)) {
+      setCashRegisters(newRegs);
+      saveToLocal('cashRegisters', newRegs);
+    }
   };
 
-  const updateExpensesState = (newExps: Expense[]) => {
-    setExpenses(newExps);
-    saveToLocal('expenses', newExps);
-    triggerCloudSync('expenses', newExps);
+  const updateExpensesState = async (newExps: Expense[]) => {
+    if (await triggerCloudSync('expenses', newExps)) {
+      setExpenses(newExps);
+      saveToLocal('expenses', newExps);
+    }
   };
 
-  const updateQualityTestsState = (newTests: FuelQualityTest[]) => {
-    setQualityTests(newTests);
-    saveToLocal('qualityTests', newTests);
-    triggerCloudSync('qualityTests', newTests);
+  const updateQualityTestsState = async (newTests: FuelQualityTest[]) => {
+    if (await triggerCloudSync('qualityTests', newTests)) {
+      setQualityTests(newTests);
+      saveToLocal('qualityTests', newTests);
+    }
   };
 
-  const updateClosureStatusState = (status: 'En cours' | 'Clôturé') => {
-    setClosureStatus(status);
-    saveToLocal('closureStatus', status);
-    triggerCloudSync('closureStatus', status);
+  const updateClosureStatusState = async (status: 'En cours' | 'Clôturé') => {
+    if (await triggerCloudSync('closureStatus', status)) {
+      setClosureStatus(status);
+      saveToLocal('closureStatus', status);
+    }
   };
 
-  const updateJournalRecordsState = (newRecords: JournalRecord[]) => {
-    setJournalRecords(newRecords);
-    saveToLocal('journalRecords', newRecords);
-    triggerCloudSync('journalRecords', newRecords);
+  const updateJournalRecordsState = async (newRecords: JournalRecord[]) => {
+    if (await triggerCloudSync('journalRecords', newRecords)) {
+      setJournalRecords(newRecords);
+      saveToLocal('journalRecords', newRecords);
+    }
   };
 
-  const updateJournalConfigState = (newConfig: JournalConfig) => {
-    setJournalConfig(newConfig);
-    saveToLocal('journalConfig', newConfig);
-    triggerCloudSync('journalConfig', newConfig);
+  const updateJournalConfigState = async (newConfig: JournalConfig) => {
+    if (await triggerCloudSync('journalConfig', newConfig)) {
+      setJournalConfig(newConfig);
+      saveToLocal('journalConfig', newConfig);
+    }
   };
 
-  const updateClientAccountsState = (newAccs: ClientAccount[]) => {
-    setClientAccounts(newAccs);
-    saveToLocal('clientAccounts', newAccs);
-    triggerCloudSync('clientAccounts', newAccs);
+  const updateClientAccountsState = async (newAccs: ClientAccount[]) => {
+    if (await triggerCloudSync('clientAccounts', newAccs)) {
+      setClientAccounts(newAccs);
+      saveToLocal('clientAccounts', newAccs);
+    }
   };
 
-  const updateCreditTransactionsState = (newTxs: CreditTransaction[]) => {
-    setCreditTransactions(newTxs);
-    saveToLocal('creditTransactions', newTxs);
-    triggerCloudSync('creditTransactions', newTxs);
+  const updateCreditTransactionsState = async (newTxs: CreditTransaction[]) => {
+    if (await triggerCloudSync('creditTransactions', newTxs)) {
+      setCreditTransactions(newTxs);
+      saveToLocal('creditTransactions', newTxs);
+    }
   };
 
-  const updateMaintenanceIncidentsState = (newIncs: MaintenanceIncident[]) => {
-    setMaintenanceIncidents(newIncs);
-    saveToLocal('maintenanceIncidents', newIncs);
-    triggerCloudSync('maintenanceIncidents', newIncs);
+  const updateMaintenanceIncidentsState = async (newIncs: MaintenanceIncident[]) => {
+    if (await triggerCloudSync('maintenanceIncidents', newIncs)) {
+      setMaintenanceIncidents(newIncs);
+      saveToLocal('maintenanceIncidents', newIncs);
+    }
   };
 
   const updateFuelPricesState = async (newPrices: FuelPriceConfig) => {
-    setFuelPrices(newPrices);
-    saveToLocal('fuelPrices', newPrices);
-    await triggerCloudSync('fuelPrices', newPrices);
-    showNotification("Paramètres de prix sauvegardés et synchronisés !");
+    if (await triggerCloudSync('fuelPrices', newPrices)) {
+      setFuelPrices(newPrices);
+      saveToLocal('fuelPrices', newPrices);
+      showNotification("Paramètres de prix sauvegardés et synchronisés !");
+    }
   };
 
   // --- API STATE CONTROLLER ACTIONS ---
