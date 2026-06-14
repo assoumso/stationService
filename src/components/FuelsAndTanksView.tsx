@@ -12,7 +12,10 @@ import {
   AlertOctagon, 
   Flame, 
   ChevronRight,
-  Info
+  Info,
+  Trash2,
+  Edit,
+  X
 } from 'lucide-react';
 
 interface FuelsAndTanksViewProps {
@@ -20,8 +23,13 @@ interface FuelsAndTanksViewProps {
   tanks: Tank[];
   deliveries: Delivery[];
   onUpdateFuelRealStock: (id: string, realStock: number) => void;
+  onUpdateFuelInitialStock: (id: string, initialStock: number) => void;
   onUpdateTankRealStock: (id: string, realStock: number) => void;
+  onUpdateTankProperties: (id: string, name: string, capacity: number, fuelType: FuelType, initialStock: number) => void;
+  onAddTank: (tank: Omit<Tank, 'id' | 'theoreticalStock' | 'lossDetected' | 'realDipstickStock' | 'deliveries' | 'sales'>) => void;
+  onDeleteTank: (id: string) => void;
   onAddDelivery: (delivery: Omit<Delivery, 'id' | 'totalAmount'>) => void;
+  onDeleteDelivery: (id: string) => void;
   fuelPrices: Record<string, { buy: number; sell: number }>;
 }
 
@@ -30,8 +38,13 @@ export default function FuelsAndTanksView({
   tanks,
   deliveries,
   onUpdateFuelRealStock,
+  onUpdateFuelInitialStock,
   onUpdateTankRealStock,
+  onUpdateTankProperties,
+  onAddTank,
+  onDeleteTank,
   onAddDelivery,
+  onDeleteDelivery,
   fuelPrices
 }: FuelsAndTanksViewProps) {
   // Local state for stock adjustment modal or inline edits
@@ -40,6 +53,22 @@ export default function FuelsAndTanksView({
 
   const [editingTankId, setEditingTankId] = useState<string | null>(null);
   const [tempTankRealStock, setTempTankRealStock] = useState<number>(0);
+
+  const [editingFuelInitialId, setEditingFuelInitialId] = useState<string | null>(null);
+  const [tempInitialStock, setTempInitialStock] = useState<number>(0);
+
+  // Tank management states
+  const [isAddTankOpen, setIsAddTankOpen] = useState(false);
+  const [newTankName, setNewTankName] = useState('');
+  const [newTankFuelType, setNewTankFuelType] = useState<FuelType>('Super');
+  const [newTankCapacity, setNewTankCapacity] = useState('');
+  const [newTankInitialStock, setNewTankInitialStock] = useState('');
+
+  const [editingTankPropId, setEditingTankPropId] = useState<string | null>(null);
+  const [editTankName, setEditTankName] = useState('');
+  const [editTankFuelType, setEditTankFuelType] = useState<FuelType>('Super');
+  const [editTankCapacity, setEditTankCapacity] = useState('');
+  const [editTankInitialStock, setEditTankInitialStock] = useState('');
 
   // New delivery form state
   const [supplier, setSupplier] = useState('');
@@ -58,9 +87,50 @@ export default function FuelsAndTanksView({
     setEditingFuelId(null);
   };
 
+  const handleFuelInitialEditSave = (id: string) => {
+    onUpdateFuelInitialStock(id, tempInitialStock);
+    setEditingFuelInitialId(null);
+  };
+
   const handleTankEditSave = (id: string) => {
     onUpdateTankRealStock(id, tempTankRealStock);
     setEditingTankId(null);
+  };
+
+  const handleAddTankSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!newTankName || !newTankCapacity || !newTankInitialStock) {
+      alert("Veuillez remplir tous les champs requis !");
+      return;
+    }
+    onAddTank({
+      name: newTankName,
+      fuelType: newTankFuelType,
+      capacity: Number(newTankCapacity),
+      initialStock: Number(newTankInitialStock),
+      lastUpdated: new Date().toISOString().split('T')[0]
+    });
+    // Reset add tank form
+    setNewTankName('');
+    setNewTankCapacity('');
+    setNewTankInitialStock('');
+    setIsAddTankOpen(false);
+  };
+
+  const handleEditTankSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingTankPropId || !editTankName || !editTankCapacity || !editTankInitialStock) {
+      alert("Veuillez remplir tous les champs requis !");
+      return;
+    }
+    onUpdateTankProperties(
+      editingTankPropId,
+      editTankName,
+      Number(editTankCapacity),
+      editTankFuelType,
+      Number(editTankInitialStock)
+    );
+    setEditingTankPropId(null);
   };
 
   const handleDeliverySubmit = (e: React.FormEvent) => {
@@ -178,7 +248,47 @@ export default function FuelsAndTanksView({
                             </div>
                           </div>
                         </td>
-                        <td className="p-2.5 text-right font-mono text-slate-705 text-slate-700">{f.initialStock.toLocaleString()} {unitLabel}</td>
+                        <td className="p-2.5 text-right font-mono text-slate-700">
+                          {editingFuelInitialId === f.id ? (
+                            <div className="flex items-center justify-end gap-1">
+                              <input 
+                                type="number" 
+                                className="w-20 text-right border border-orange-400 bg-white px-1.5 py-0.5 rounded font-mono text-xs focus:outline-none"
+                                value={tempInitialStock}
+                                onChange={e => setTempInitialStock(Number(e.target.value))}
+                                onKeyDown={e => e.key === 'Enter' && handleFuelInitialEditSave(f.id)}
+                              />
+                              <button 
+                                onClick={() => handleFuelInitialEditSave(f.id)} 
+                                className="bg-emerald-600 text-white p-0.5 rounded hover:bg-emerald-700"
+                                title="Enregistrer"
+                              >
+                                <Check className="w-3 h-3" />
+                              </button>
+                              <button 
+                                onClick={() => setEditingFuelInitialId(null)} 
+                                className="bg-slate-200 text-slate-700 p-0.5 rounded hover:bg-slate-300"
+                                title="Annuler"
+                              >
+                                <X className="w-3 h-3" />
+                              </button>
+                            </div>
+                          ) : (
+                            <div className="flex items-center justify-end gap-1.5 group">
+                              <span>{f.initialStock.toLocaleString()} {unitLabel}</span>
+                              <button
+                                onClick={() => {
+                                  setEditingFuelInitialId(f.id);
+                                  setTempInitialStock(f.initialStock);
+                                }}
+                                className="text-slate-400 hover:text-slate-900 opacity-0 group-hover:opacity-100 transition-opacity p-0.5 cursor-pointer"
+                                title="Modifier le stock initial"
+                              >
+                                <Edit className="w-3 h-3" />
+                              </button>
+                            </div>
+                          )}
+                        </td>
                         <td className="p-2.5 text-right font-mono text-emerald-600 font-semibold">+{f.inputs.toLocaleString()}</td>
                         <td className="p-2.5 text-right font-mono text-rose-600">-{f.outputs.toLocaleString()}</td>
                         <td className="p-2.5 text-right font-mono bg-slate-50 font-bold text-slate-900">{f.theoreticalStock.toLocaleString()} {unitLabel}</td>
@@ -270,9 +380,22 @@ export default function FuelsAndTanksView({
       {/* VIEW PANEL 2: TANKS (CUVES) WITH GAUGING */}
       {activeTab === 'tanks' && (
         <div className="space-y-6" id="tab-tanks">
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center bg-white p-4 rounded-xl border border-slate-200 shadow-xs gap-3">
+            <div>
+              <h3 className="font-bold text-slate-900 text-sm">Gestion et Paramétrage des Cuves de Stockage</h3>
+              <p className="text-xs text-slate-500">Ajoutez de nouvelles cuves, ajustez les volumes nominaux et suivez les pertes métriques.</p>
+            </div>
+            <button
+              onClick={() => setIsAddTankOpen(true)}
+              className="bg-orange-600 hover:bg-orange-700 text-white font-bold py-2 px-4 rounded-xl text-xs flex items-center gap-1.5 shadow-xs transition-colors cursor-pointer"
+            >
+              <PlusCircle className="w-4 h-4" /> Ajouter une Cuve
+            </button>
+          </div>
+
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4" id="tanks-visualizers">
             {tanks.map(t => {
-              const fillPercentage = (t.realDipstickStock / t.capacity) * 100;
+              const fillPercentage = Math.min(100, Math.max(0, (t.realDipstickStock / t.capacity) * 100));
               const hasAlert = t.realDipstickStock < t.capacity * 0.15; // less than 15% left
               const isEditing = editingTankId === t.id;
 
@@ -282,32 +405,59 @@ export default function FuelsAndTanksView({
                     <div className="flex items-start justify-between">
                       <div>
                         <h4 className="font-bold text-slate-900 text-sm">{t.name}</h4>
-                        <span className="inline-block text-[10px] font-bold uppercase tracking-wider bg-slate-100 text-slate-600 px-2 py-0.5 rounded mt-0.5">
+                        <span className="inline-block text-[10px] font-bold uppercase tracking-wider bg-slate-105 bg-slate-100 text-slate-650 text-slate-600 px-2 py-0.5 rounded mt-0.5">
                           {t.fuelType}
                         </span>
                       </div>
-                      {hasAlert && (
-                        <span className="p-1.5 rounded-full bg-rose-50 text-rose-600 animate-bounce">
-                          <AlertOctagon className="w-4 h-4" />
-                        </span>
-                      )}
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => {
+                            setEditingTankPropId(t.id);
+                            setEditTankName(t.name);
+                            setEditTankFuelType(t.fuelType);
+                            setEditTankCapacity(String(t.capacity));
+                            setEditTankInitialStock(String(t.initialStock));
+                          }}
+                          className="text-slate-400 hover:text-slate-900 p-1 hover:bg-slate-50 rounded cursor-pointer"
+                          title="Modifier la cuve"
+                        >
+                          <Edit className="w-3.5 h-3.5" />
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (window.confirm(`Voulez-vous vraiment supprimer la cuve "${t.name}" ?`)) {
+                              onDeleteTank(t.id);
+                            }
+                          }}
+                          className="text-rose-500 hover:text-rose-700 p-1 hover:bg-rose-50 rounded cursor-pointer"
+                          title="Supprimer la cuve"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                        {hasAlert && (
+                          <span className="p-1 text-rose-600 animate-pulse" title="Niveau critique !">
+                            <AlertOctagon className="w-3.5 h-3.5" />
+                          </span>
+                        )}
+                      </div>
                     </div>
 
                     {/* Fuel Tank visual cylinder */}
-                    <div className="my-5 relative h-28 w-full bg-slate-100 rounded-lg border-2 border-slate-350 overflow-hidden flex flex-col justify-end">
+                    <div className="my-5 relative h-28 w-full bg-slate-105 bg-slate-100 rounded-lg border-2 border-slate-350 overflow-hidden flex flex-col justify-end">
                       {/* Fuel level bar with colored animation depending on fuelType */}
                       <div 
                         className={`w-full transition-all duration-700 ${
                           t.fuelType === 'Super' ? 'bg-amber-400/80 hover:bg-amber-400' :
                           t.fuelType === 'Sans plomb' ? 'bg-emerald-400/80 hover:bg-emerald-400' :
-                          'bg-blue-400/80 hover:bg-blue-400'
+                          t.fuelType === 'Gasoil' ? 'bg-blue-400/80 hover:bg-blue-400' :
+                          'bg-purple-400/85'
                         }`}
                         style={{ height: `${fillPercentage}%` }}
                       ></div>
                       {/* Grid lines indicators inside custom cylinder */}
                       <div className="absolute inset-0 flex flex-col justify-between p-2 pointer-events-none text-[9px] font-mono font-medium text-slate-500 bg-linear-to-b from-transparent to-black/5">
                         <div className="text-right border-b border-dashed border-slate-300">100% ({t.capacity.toLocaleString()}L)</div>
-                        <div className="text-right border-b border-dashed border-slate-250">50% ({Math.floor(t.capacity/2).toLocaleString()}L)</div>
+                        <div className="text-right border-b border-dashed border-slate-200">50% ({Math.floor(t.capacity/2).toLocaleString()}L)</div>
                         <div className="text-right">15% Zone Critique</div>
                       </div>
                     </div>
@@ -325,11 +475,11 @@ export default function FuelsAndTanksView({
                           <div className="flex gap-1">
                             <input 
                               type="number" 
-                              className="w-16 border border-orange-400 text-right bg-white px-1.5 py-0.5 text-xs font-mono rounded focus:outline-none focus:ring-1 focus:ring-orange-500"
+                              className="w-16 border border-orange-400 text-right bg-white px-1.5 py-0.5 text-xs font-mono rounded focus:outline-none"
                               value={tempTankRealStock}
                               onChange={e => setTempTankRealStock(Number(e.target.value))}
                             />
-                            <button onClick={() => handleTankEditSave(t.id)} className="bg-orange-600 text-white p-0.5 rounded hover:bg-orange-700">
+                            <button onClick={() => handleTankEditSave(t.id)} className="bg-orange-600 text-white p-0.5 rounded hover:bg-orange-700 cursor-pointer">
                               <Check className="w-3.5 h-3.5" />
                             </button>
                           </div>
@@ -339,7 +489,8 @@ export default function FuelsAndTanksView({
                               setEditingTankId(t.id);
                               setTempTankRealStock(t.realDipstickStock);
                             }}
-                            className="font-bold font-mono text-orange-700 cursor-pointer underline decoration-dotted decoration-orange-400 hover:text-orange-500"
+                            className="font-bold font-mono text-orange-755 text-orange-700 cursor-pointer underline decoration-dotted decoration-orange-400 hover:text-orange-500"
+                            title="Cliquer pour jeter une mesure de jauge"
                           >
                             {t.realDipstickStock.toLocaleString()} L
                           </span>
@@ -347,9 +498,9 @@ export default function FuelsAndTanksView({
                       </div>
 
                       <div className="flex justify-between">
-                        <span className="text-slate-500">Pertes détectées:</span>
-                        <span className={`font-mono font-bold ${t.lossDetected < 0 ? 'text-red-500' : 'text-slate-500'}`}>
-                          {t.lossDetected === 0 ? 'Aucune' : `${t.lossDetected.toLocaleString()} L`}
+                        <span className="text-slate-505 text-slate-500">Pertes détectées:</span>
+                        <span className={`font-mono font-bold ${t.lossDetected < 0 ? 'text-red-500' : t.lossDetected > 0 ? 'text-green-600' : 'text-slate-500'}`}>
+                          {t.lossDetected === 0 ? 'Aucune' : t.lossDetected > 0 ? `+${t.lossDetected.toLocaleString()} L` : `${t.lossDetected.toLocaleString()} L`}
                         </span>
                       </div>
                     </div>
@@ -362,7 +513,7 @@ export default function FuelsAndTanksView({
                         setEditingTankId(editingTankId === t.id ? null : t.id);
                         setTempTankRealStock(t.realDipstickStock);
                       }} 
-                      className="text-xs text-orange-600 hover:text-orange-850 font-bold inline-flex items-center gap-1"
+                      className="text-xs text-orange-600 hover:text-orange-800 font-bold inline-flex items-center gap-1 cursor-pointer"
                     >
                       Mettre à jour le jaugeage métrique <ChevronRight className="w-3 h-3" />
                     </button>
@@ -371,6 +522,162 @@ export default function FuelsAndTanksView({
               );
             })}
           </div>
+
+          {/* Add Tank Modal */}
+          {isAddTankOpen && (
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+              <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in scale-in duration-200">
+                <div className="p-4 bg-slate-905 bg-slate-900 text-white flex items-center justify-between">
+                  <h3 className="font-bold text-sm">Ajouter une Nouvelle Cuve</h3>
+                  <button onClick={() => setIsAddTankOpen(false)} className="text-slate-400 hover:text-white cursor-pointer">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                <form onSubmit={handleAddTankSubmit} className="p-5 space-y-4 text-xs font-sans">
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1">Nom de la Cuve</label>
+                    <input
+                      type="text"
+                      className="w-full border border-slate-300 rounded px-2.5 py-2 text-xs focus:ring-1 focus:ring-slate-900 focus:outline-none"
+                      placeholder="Ex: Cuve 3 (Gasoil)"
+                      value={newTankName}
+                      onChange={e => setNewTankName(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-slate-700 font-bold mb-1">Type de Carburant</label>
+                      <select
+                        className="w-full border border-slate-300 rounded px-2 py-2 text-xs bg-white focus:outline-none"
+                        value={newTankFuelType}
+                        onChange={e => setNewTankFuelType(e.target.value as FuelType)}
+                      >
+                        <option value="Super">Super</option>
+                        <option value="Sans plomb">Sans plomb</option>
+                        <option value="Gasoil">Gasoil</option>
+                        <option value="Pétrole">Pétrole</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-slate-700 font-bold mb-1">Capacité Max (L)</label>
+                      <input
+                        type="number"
+                        className="w-full border border-slate-300 rounded px-2.5 py-2 text-xs focus:outline-none"
+                        placeholder="Ex: 15000"
+                        value={newTankCapacity}
+                        onChange={e => setNewTankCapacity(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1">Stock Initial de Départ (L)</label>
+                    <input
+                      type="number"
+                      className="w-full border border-slate-300 rounded px-2.5 py-2 text-xs focus:outline-none"
+                      placeholder="Ex: 4000"
+                      value={newTankInitialStock}
+                      onChange={e => setNewTankInitialStock(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                    <button
+                      type="button"
+                      onClick={() => setIsAddTankOpen(false)}
+                      className="px-4 py-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold cursor-pointer"
+                    >
+                      Annuler
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-bold shadow-xs cursor-pointer"
+                    >
+                      Créer la cuve
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
+          {/* Edit Tank Modal */}
+          {editingTankPropId && (
+            <div className="fixed inset-0 bg-black/60 backdrop-blur-xs flex items-center justify-center z-50 p-4 animate-in fade-in duration-200">
+              <div className="bg-white rounded-xl shadow-xl w-full max-w-md overflow-hidden animate-in scale-in duration-200">
+                <div className="p-4 bg-slate-900 text-white flex items-center justify-between">
+                  <h3 className="font-bold text-sm">Modifier les Paramètres de la Cuve</h3>
+                  <button onClick={() => setEditingTankPropId(null)} className="text-slate-400 hover:text-white cursor-pointer">
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+                <form onSubmit={handleEditTankSubmit} className="p-5 space-y-4 text-xs font-sans">
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1">Nom de la Cuve</label>
+                    <input
+                      type="text"
+                      className="w-full border border-slate-300 rounded px-2.5 py-2 text-xs focus:outline-none"
+                      value={editTankName}
+                      onChange={e => setEditTankName(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <label className="block text-slate-700 font-bold mb-1">Type de Carburant</label>
+                      <select
+                        className="w-full border border-slate-300 rounded px-2 py-2 text-xs bg-white focus:outline-none"
+                        value={editTankFuelType}
+                        onChange={e => setEditTankFuelType(e.target.value as FuelType)}
+                      >
+                        <option value="Super">Super</option>
+                        <option value="Sans plomb">Sans plomb</option>
+                        <option value="Gasoil">Gasoil</option>
+                        <option value="Pétrole">Pétrole</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="block text-slate-700 font-bold mb-1">Capacité Max (L)</label>
+                      <input
+                        type="number"
+                        className="w-full border border-slate-300 rounded px-2.5 py-2 text-xs focus:outline-none"
+                        value={editTankCapacity}
+                        onChange={e => setEditTankCapacity(e.target.value)}
+                        required
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-slate-700 font-bold mb-1">Stock Initial (L)</label>
+                    <input
+                      type="number"
+                      className="w-full border border-slate-300 rounded px-2.5 py-2 text-xs focus:outline-none"
+                      value={editTankInitialStock}
+                      onChange={e => setEditTankInitialStock(e.target.value)}
+                      required
+                    />
+                  </div>
+                  <div className="flex justify-end gap-2 pt-3 border-t border-slate-100">
+                    <button
+                      type="button"
+                      onClick={() => setEditingTankPropId(null)}
+                      className="px-4 py-2 rounded-lg border border-slate-200 text-slate-700 hover:bg-slate-50 font-bold cursor-pointer"
+                    >
+                      Annuler
+                    </button>
+                    <button
+                      type="submit"
+                      className="px-4 py-2 rounded-lg bg-orange-600 hover:bg-orange-700 text-white font-bold shadow-xs cursor-pointer"
+                    >
+                      Enregistrer les modifications
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </div>
+          )}
+
         </div>
       )}
 
@@ -546,6 +853,13 @@ export default function FuelsAndTanksView({
                           }`}>
                             {d.status}
                           </span>
+                          <button
+                            onClick={() => onDeleteDelivery(d.id)}
+                            className="p-1 text-slate-400 hover:text-rose-650 text-rose-500 hover:text-rose-700 hover:bg-rose-50 rounded transition-colors cursor-pointer"
+                            title="Supprimer la livraison"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
                         </div>
                       </div>
                     </div>

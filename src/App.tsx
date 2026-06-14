@@ -607,6 +607,19 @@ export default function App() {
     showNotification("Stock de carburant mis à jour !");
   };
 
+  const handleUpdateFuelInitialStock = (id: string, initialStock: number) => {
+    const updated = fuels.map(f => {
+      if (f.id === id) {
+        const theoreticalStock = initialStock + f.inputs - f.outputs;
+        const gap = f.realStock - theoreticalStock;
+        return { ...f, initialStock, theoreticalStock, gap };
+      }
+      return f;
+    });
+    updateFuelsState(updated);
+    showNotification("Stock initial mis à jour !");
+  };
+
   // 2. Tank Stock update
   const handleUpdateTankRealStock = (id: string, realStock: number) => {
     const updated = tanks.map(t => {
@@ -618,6 +631,52 @@ export default function App() {
     });
     updateTanksState(updated);
     showNotification("Jaugeage de la cuve enregistré !");
+  };
+
+  const handleAddTank = (tankOmit: Omit<Tank, 'id' | 'theoreticalStock' | 'lossDetected' | 'realDipstickStock' | 'deliveries' | 'sales'>) => {
+    const newTank: Tank = {
+      ...tankOmit,
+      id: `tank_${Date.now()}`,
+      deliveries: 0,
+      sales: 0,
+      realDipstickStock: tankOmit.initialStock,
+      theoreticalStock: tankOmit.initialStock,
+      lossDetected: 0,
+      lastUpdated: new Date().toISOString().split('T')[0]
+    };
+    const updated = [...tanks, newTank];
+    updateTanksState(updated);
+    showNotification(`Nouvelle cuve "${newTank.name}" ajoutée !`);
+  };
+
+  const handleDeleteTank = (id: string) => {
+    const confirmDelete = window.confirm("Êtes-vous sûr de vouloir supprimer cette cuve ?");
+    if (confirmDelete) {
+      const updated = tanks.filter(t => t.id !== id);
+      updateTanksState(updated);
+      showNotification("Cuve supprimée.", "info");
+    }
+  };
+
+  const handleUpdateTankProperties = (id: string, name: string, capacity: number, fuelType: FuelType, initialStock: number) => {
+    const updated = tanks.map(t => {
+      if (t.id === id) {
+        const theoreticalStock = initialStock + t.deliveries - t.sales;
+        const lossDetected = t.realDipstickStock - theoreticalStock;
+        return {
+          ...t,
+          name,
+          capacity,
+          fuelType,
+          initialStock,
+          theoreticalStock,
+          lossDetected
+        };
+      }
+      return t;
+    });
+    updateTanksState(updated);
+    showNotification("Propriétés de la cuve mises à jour !");
   };
 
   // 3. Register Delivery
@@ -657,6 +716,43 @@ export default function App() {
       return t;
     });
     updateTanksState(updatedTanks);
+  };
+
+  const handleDeleteDelivery = (id: string) => {
+    const delivery = deliveries.find(d => d.id === id);
+    if (!delivery) return;
+
+    const confirmDelete = window.confirm("Êtes-vous sûr de vouloir supprimer cette livraison ? Cela recalculera les stocks de carburant et de cuve correspondants.");
+    if (confirmDelete) {
+      // 1. Remove from list
+      const updatedDels = deliveries.filter(d => d.id !== id);
+      updateDeliveriesState(updatedDels);
+      showNotification("Livraison supprimée.", "info");
+
+      // 2. Adjust fuel inputs
+      const updatedFuels = fuels.map(f => {
+        if (f.product === delivery.product) {
+          const inputs = Math.max(0, f.inputs - delivery.quantity);
+          const theoreticalStock = f.initialStock + inputs - f.outputs;
+          const gap = f.realStock - theoreticalStock;
+          return { ...f, inputs, theoreticalStock, gap };
+        }
+        return f;
+      });
+      updateFuelsState(updatedFuels);
+
+      // 3. Adjust Tank deliveries
+      const updatedTanks = tanks.map(t => {
+        if (t.fuelType === delivery.product) {
+          const dels = Math.max(0, t.deliveries - delivery.quantity);
+          const theoreticalStock = t.initialStock + dels - t.sales;
+          const lossDetected = t.realDipstickStock - theoreticalStock;
+          return { ...t, deliveries: dels, theoreticalStock, lossDetected };
+        }
+        return t;
+      });
+      updateTanksState(updatedTanks);
+    }
   };
 
   // 4. Update Pump readings Index
@@ -1204,8 +1300,13 @@ export default function App() {
             deliveries={deliveries}
             fuelPrices={fuelPrices}
             onUpdateFuelRealStock={handleUpdateFuelRealStock}
+            onUpdateFuelInitialStock={handleUpdateFuelInitialStock}
             onUpdateTankRealStock={handleUpdateTankRealStock}
+            onUpdateTankProperties={handleUpdateTankProperties}
+            onAddTank={handleAddTank}
+            onDeleteTank={handleDeleteTank}
             onAddDelivery={handleAddDelivery}
+            onDeleteDelivery={handleDeleteDelivery}
           />
         );
       case 'quality':
