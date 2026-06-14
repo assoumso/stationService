@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { FuelStock, Tank, Delivery, FuelType } from '../types';
-import { FUEL_PRICES } from '../mockData';
 import { 
   Droplet, 
   PlusCircle, 
@@ -23,6 +22,7 @@ interface FuelsAndTanksViewProps {
   onUpdateFuelRealStock: (id: string, realStock: number) => void;
   onUpdateTankRealStock: (id: string, realStock: number) => void;
   onAddDelivery: (delivery: Omit<Delivery, 'id' | 'totalAmount'>) => void;
+  fuelPrices: Record<string, { buy: number; sell: number }>;
 }
 
 export default function FuelsAndTanksView({
@@ -31,7 +31,8 @@ export default function FuelsAndTanksView({
   deliveries,
   onUpdateFuelRealStock,
   onUpdateTankRealStock,
-  onAddDelivery
+  onAddDelivery,
+  fuelPrices
 }: FuelsAndTanksViewProps) {
   // Local state for stock adjustment modal or inline edits
   const [editingFuelId, setEditingFuelId] = useState<string | null>(null);
@@ -156,7 +157,7 @@ export default function FuelsAndTanksView({
                   {fuels.map(f => {
                     const unitLabel = f.product === 'Gaz' ? 'boul.' : f.product === 'Lubrifiants' ? 'bidons' : 'L';
                     const isGasOrLub = f.product === 'Gaz' || f.product === 'Lubrifiants';
-                    const price = FUEL_PRICES[f.product]?.sell || 0;
+                    const price = fuelPrices[f.product]?.sell || 0;
                     const lossValue = f.gap * price;
 
                     return (

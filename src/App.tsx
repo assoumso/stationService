@@ -58,6 +58,7 @@ import ReportsView from './components/ReportsView';
 import JournalView from './components/JournalView';
 import CreditsView from './components/CreditsView';
 import MaintenanceView from './components/MaintenanceView';
+import SettingsView, { FuelPriceConfig } from './components/SettingsView';
 
 // Icons
 import { 
@@ -86,7 +87,8 @@ import {
   AlertTriangle,
   FileText,
   CheckCircle2,
-  CreditCard
+  CreditCard,
+  Settings
 } from 'lucide-react';
 
 import { 
@@ -126,6 +128,7 @@ export default function App() {
   const [clientAccounts, setClientAccounts] = useState<ClientAccount[]>([]);
   const [creditTransactions, setCreditTransactions] = useState<CreditTransaction[]>([]);
   const [maintenanceIncidents, setMaintenanceIncidents] = useState<MaintenanceIncident[]>([]);
+  const [fuelPrices, setFuelPrices] = useState<FuelPriceConfig>(FUEL_PRICES);
 
   // --- SUPABASE SYNC STATES ---
   const [isSyncModalOpen, setIsSyncModalOpen] = useState<boolean>(false);
@@ -209,7 +212,7 @@ export default function App() {
           'fuels', 'pumps', 'tanks', 'deliveries', 'shopProducts', 'shopSales', 
           'carWash', 'oilChanges', 'employees', 'shifts', 'cashRegisters', 
           'expenses', 'qualityTests', 'closureStatus', 'journalRecords', 'journalConfig',
-          'clientAccounts', 'creditTransactions', 'maintenanceIncidents'
+          'clientAccounts', 'creditTransactions', 'maintenanceIncidents', 'fuelPrices'
         ];
 
         const results = await Promise.all(keys.map(k => loadStateFromSupabase(k)));
@@ -238,6 +241,7 @@ export default function App() {
               case 'clientAccounts': setClientAccounts(data); saveToLocal('clientAccounts', data); break;
               case 'creditTransactions': setCreditTransactions(data); saveToLocal('creditTransactions', data); break;
               case 'maintenanceIncidents': setMaintenanceIncidents(data); saveToLocal('maintenanceIncidents', data); break;
+              case 'fuelPrices': setFuelPrices(data); saveToLocal('fuelPrices', data); break;
             }
           } else {
             let currentLocalVal: any = null;
@@ -261,6 +265,7 @@ export default function App() {
               case 'clientAccounts': currentLocalVal = currentClientAccounts; break;
               case 'creditTransactions': currentLocalVal = currentCreditTransactions; break;
               case 'maintenanceIncidents': currentLocalVal = currentMaintenanceIncidents; break;
+              case 'fuelPrices': currentLocalVal = fuelPrices; break;
             }
             if (currentLocalVal !== null) {
               keysToInitialize.push({ key, val: currentLocalVal });
@@ -294,14 +299,14 @@ export default function App() {
         'fuels', 'pumps', 'tanks', 'deliveries', 'shopProducts', 'shopSales', 
         'carWash', 'oilChanges', 'employees', 'shifts', 'cashRegisters', 
         'expenses', 'qualityTests', 'closureStatus', 'journalRecords', 'journalConfig',
-        'clientAccounts', 'creditTransactions', 'maintenanceIncidents'
+        'clientAccounts', 'creditTransactions', 'maintenanceIncidents', 'fuelPrices'
       ];
       
       const values = [
         fuels, pumps, tanks, deliveries, shopProducts, shopSales, 
         carWash, oilChanges, employees, shifts, cashRegisters, 
         expenses, qualityTests, closureStatus, journalRecords, journalConfig,
-        clientAccounts, creditTransactions, maintenanceIncidents
+        clientAccounts, creditTransactions, maintenanceIncidents, fuelPrices
       ];
 
       await Promise.all(keys.map((key, i) => saveStateToSupabase(key, values[i])));
@@ -358,6 +363,7 @@ export default function App() {
     const initClientAccounts = getLocal('clientAccounts', INITIAL_CLIENT_ACCOUNTS);
     const initCreditTransactions = getLocal('creditTransactions', INITIAL_CREDIT_TRANSACTIONS);
     const initMaintenanceIncidents = getLocal('maintenanceIncidents', INITIAL_MAINTENANCE_INCIDENTS);
+    const initFuelPrices = getLocal('fuelPrices', FUEL_PRICES);
 
     setFuels(initFuels);
     setPumps(initPumps);
@@ -378,6 +384,7 @@ export default function App() {
     setClientAccounts(initClientAccounts);
     setCreditTransactions(initCreditTransactions);
     setMaintenanceIncidents(initMaintenanceIncidents);
+    setFuelPrices(initFuelPrices);
 
     if (isSupabaseConfigured()) {
       pullFromSupabase(
@@ -502,6 +509,12 @@ export default function App() {
     setMaintenanceIncidents(newIncs);
     saveToLocal('maintenanceIncidents', newIncs);
     triggerCloudSync('maintenanceIncidents', newIncs);
+  };
+
+  const updateFuelPricesState = (newPrices: FuelPriceConfig) => {
+    setFuelPrices(newPrices);
+    saveToLocal('fuelPrices', newPrices);
+    triggerCloudSync('fuelPrices', newPrices);
   };
 
   // --- API STATE CONTROLLER ACTIONS ---
@@ -644,7 +657,7 @@ export default function App() {
     updateTanksState(updatedTanks);
 
     // D. Adjust active shift & cash registers balance with the delta
-    const fuelPrice = FUEL_PRICES[pumpTarget]?.sell || 0;
+    const fuelPrice = fuelPrices[pumpTarget]?.sell || 0;
     const deltaAmount = volumeDifference * fuelPrice;
 
     // Increase theoretical invoice cash of the active shift (s2: Soir is our active)
@@ -1094,6 +1107,7 @@ export default function App() {
             oilChanges={oilChanges}
             expenses={expenses}
             cashRegisters={cashRegisters}
+            fuelPrices={fuelPrices}
             onNavigate={(view) => setActiveTab(view)}
           />
         );
@@ -1103,6 +1117,7 @@ export default function App() {
             fuels={fuels}
             tanks={tanks}
             deliveries={deliveries}
+            fuelPrices={fuelPrices}
             onUpdateFuelRealStock={handleUpdateFuelRealStock}
             onUpdateTankRealStock={handleUpdateTankRealStock}
             onAddDelivery={handleAddDelivery}
@@ -1121,6 +1136,7 @@ export default function App() {
         return (
           <PumpsView 
             pumps={pumps}
+            fuelPrices={fuelPrices}
             onUpdatePumpIndices={handleUpdatePumpIndices}
             onAddPump={handleAddPump}
           />
@@ -1175,6 +1191,7 @@ export default function App() {
             oilChanges={oilChanges}
             expenses={expenses}
             cashRegisters={cashRegisters}
+            fuelPrices={fuelPrices}
             onFinalizeDailyClosure={handleFinalizeDailyClosure}
             closureStatus={closureStatus}
           />
@@ -1213,6 +1230,13 @@ export default function App() {
             onAddIncident={handleAddMaintenanceIncident}
             onUpdateIncident={handleUpdateMaintenanceIncident}
             onDeleteIncident={handleDeleteMaintenanceIncident}
+          />
+        );
+      case 'settings':
+        return (
+          <SettingsView
+            fuelPrices={fuelPrices}
+            onSaveFuelPrices={updateFuelPricesState}
           />
         );
       default:
@@ -1298,6 +1322,7 @@ export default function App() {
               items: [
                 { id: 'credits', label: 'Crédits Clients B2B', icon: <CreditCard className="w-4 h-4" /> },
                 { id: 'maintenance', label: 'Maintenance & Pannes', icon: <Wrench className="w-4 h-4" /> },
+                { id: 'settings', label: 'Paramètres Prix', icon: <Settings className="w-4 h-4" /> },
               ]
             }
           ].map((rubric, idx) => (
@@ -1499,6 +1524,7 @@ export default function App() {
                   items: [
                     { id: 'credits', label: 'Crédits Clients B2B', icon: <CreditCard className="w-4 h-4" /> },
                     { id: 'maintenance', label: 'Maintenance & Pannes', icon: <Wrench className="w-4 h-4" /> },
+                    { id: 'settings', label: 'Paramètres Prix', icon: <Settings className="w-4 h-4" /> },
                   ]
                 }
               ].map((rubric, idx) => (

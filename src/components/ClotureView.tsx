@@ -9,7 +9,6 @@ import {
   Expense, 
   CashRegister 
 } from '../types';
-import { FUEL_PRICES } from '../mockData';
 import { 
   FileText, 
   Download, 
@@ -31,6 +30,7 @@ interface ClotureViewProps {
   oilChanges: OilChangeRecord[];
   expenses: Expense[];
   cashRegisters: CashRegister[];
+  fuelPrices: Record<string, { buy: number; sell: number }>;
   onFinalizeDailyClosure: (report: any) => void;
   closureStatus: 'En cours' | 'Clôturé';
 }
@@ -44,6 +44,7 @@ export default function ClotureView({
   oilChanges,
   expenses,
   cashRegisters,
+  fuelPrices,
   onFinalizeDailyClosure,
   closureStatus
 }: ClotureViewProps) {
@@ -53,7 +54,7 @@ export default function ClotureView({
   // --- Compile metrics ---
   const fuelSalesVolume = pumps.reduce((acc, p) => acc + p.volumeSold, 0);
   const fuelRevenue = pumps.reduce((acc, p) => {
-    const price = FUEL_PRICES[p.fuelType]?.sell || 0;
+    const price = fuelPrices[p.fuelType]?.sell || 0;
     return acc + (p.volumeSold * price);
   }, 0);
 
@@ -215,11 +216,11 @@ export default function ClotureView({
               <p className="font-bold text-slate-900 mb-1.5 text-[11px]">Département Carburants (Pompes indexées)</p>
               <div className="space-y-1.5">
                 {pumps.map(pump => {
-                  const val = pump.volumeSold * (FUEL_PRICES[pump.fuelType]?.sell || 0);
+                  const val = pump.volumeSold * (fuelPrices[pump.fuelType]?.sell || 0);
                   return (
                     <div key={pump.id} className="flex justify-between font-mono text-[11px] text-slate-650">
                       <span>{pump.name} ({pump.fuelType}) :</span>
-                      <span>{pump.volumeSold} L × {(FUEL_PRICES[pump.fuelType]?.sell || 0).toFixed(0)} FCFA = <span className="font-semibold text-slate-900">{val.toLocaleString()} FCFA</span></span>
+                      <span>{pump.volumeSold} L × {(fuelPrices[pump.fuelType]?.sell || 0).toFixed(0)} FCFA = <span className="font-semibold text-slate-900">{val.toLocaleString()} FCFA</span></span>
                     </div>
                   );
                 })}

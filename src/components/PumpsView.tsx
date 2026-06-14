@@ -11,18 +11,20 @@ import {
   Sparkles,
   HelpCircle
 } from 'lucide-react';
-import { FUEL_PRICES } from '../mockData';
+} from 'lucide-react';
 
 interface PumpsViewProps {
   pumps: Pump[];
   onUpdatePumpIndices: (id: string, startIndex: number, endIndex: number) => void;
   onAddPump: (pump: Omit<Pump, 'id' | 'volumeSold' | 'lastUpdated'>) => void;
+  fuelPrices: Record<string, { buy: number; sell: number }>;
 }
 
 export default function PumpsView({
   pumps,
   onUpdatePumpIndices,
-  onAddPump
+  onAddPump,
+  fuelPrices
 }: PumpsViewProps) {
   // New pump configuration form state
   const [newPumpName, setNewPumpName] = useState('');
@@ -121,7 +123,7 @@ export default function PumpsView({
             <div className="divide-y divide-slate-100">
               {filteredPumps.map(pump => {
                 const isEditing = editingPumpId === pump.id;
-                const unitPrice = FUEL_PRICES[pump.fuelType]?.sell || 0;
+                const unitPrice = fuelPrices[pump.fuelType]?.sell || 0;
                 const turnover = pump.volumeSold * unitPrice;
 
                 return (

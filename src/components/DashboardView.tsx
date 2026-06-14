@@ -10,7 +10,6 @@ import {
   CashRegister 
 } from '../types';
 import { 
-  FUEL_PRICES, 
   INITIAL_HOURLY_SALES, 
   RECENT_HISTORY 
 } from '../mockData';
@@ -50,6 +49,7 @@ interface DashboardViewProps {
   oilChanges: OilChangeRecord[];
   expenses: Expense[];
   cashRegisters: CashRegister[];
+  fuelPrices: Record<string, { buy: number; sell: number }>;
   onNavigate: (view: string) => void;
 }
 
@@ -62,19 +62,20 @@ export default function DashboardView({
   oilChanges,
   expenses,
   cashRegisters,
+  fuelPrices,
   onNavigate
 }: DashboardViewProps) {
   // --- Calculations for Today (2026-06-11) ---
   
   // 1. Fuel Sales revenue
   const fuelRevenue = pumps.reduce((acc, pump) => {
-    const price = FUEL_PRICES[pump.fuelType]?.sell || 0;
+    const price = fuelPrices[pump.fuelType]?.sell || 0;
     return acc + (pump.volumeSold * price);
   }, 0);
 
   // 1b. Fuel Cost for profit estimate
   const fuelCost = pumps.reduce((acc, pump) => {
-    const price = FUEL_PRICES[pump.fuelType]?.buy || 0;
+    const price = fuelPrices[pump.fuelType]?.buy || 0;
     return acc + (pump.volumeSold * price);
   }, 0);
 
@@ -125,7 +126,7 @@ export default function DashboardView({
   // Losses & Gaps
   const fuelGapValue = fuels.reduce((acc, f) => {
     // Gap in Liters multiplied by retail price to see commercial value of gap
-    const price = FUEL_PRICES[f.product]?.sell || 0;
+    const price = fuelPrices[f.product]?.sell || 0;
     return acc + (f.gap * price);
   }, 0);
 
