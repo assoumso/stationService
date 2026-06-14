@@ -65,8 +65,8 @@ export default function SettingsView({ fuelPrices, onSaveFuelPrices }: SettingsV
         alert(`⚠️ Erreur : Le prix de vente du "${fuel}" ne peut pas être inférieur au prix d'achat !`);
         return;
       }
-      if (prices.buy <= 0 || prices.sell <= 0) {
-        alert(`⚠️ Erreur : Les prix pour "${fuel}" doivent être supérieurs à 0 !`);
+      if (prices.buy < 0 || prices.sell < 0) {
+        alert(`⚠️ Erreur : Les prix pour "${fuel}" ne peuvent pas être négatifs !`);
         return;
       }
     }
