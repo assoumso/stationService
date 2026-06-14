@@ -11,7 +11,6 @@ import {
   Sparkles,
   HelpCircle
 } from 'lucide-react';
-} from 'lucide-react';
 
 interface PumpsViewProps {
   pumps: Pump[];
