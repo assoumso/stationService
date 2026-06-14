@@ -203,7 +203,8 @@ export default function App() {
     currentJournalConfig: JournalConfig,
     currentClientAccounts: ClientAccount[],
     currentCreditTransactions: CreditTransaction[],
-    currentMaintenanceIncidents: MaintenanceIncident[]
+    currentMaintenanceIncidents: MaintenanceIncident[],
+    currentFuelPrices: FuelPriceConfig
   ) => {
     if (!isSupabaseConfigured()) return;
     setSupabaseStatus(prev => ({ ...prev, loading: true }));
@@ -274,7 +275,7 @@ export default function App() {
               case 'clientAccounts': currentLocalVal = currentClientAccounts; break;
               case 'creditTransactions': currentLocalVal = currentCreditTransactions; break;
               case 'maintenanceIncidents': currentLocalVal = currentMaintenanceIncidents; break;
-              case 'fuelPrices': currentLocalVal = fuelPrices; break;
+              case 'fuelPrices': currentLocalVal = currentFuelPrices; break;
             }
             if (currentLocalVal !== null) {
               keysToInitialize.push({ key, val: currentLocalVal });
@@ -400,7 +401,7 @@ export default function App() {
         initFuels, initPumps, initTanks, initDeliveries, initShopProducts, initShopSales,
         initCarWash, initOilChanges, initEmployees, initShifts, initCashRegisters,
         initExpenses, initQualityTests, initClosureStatus, initJournalRecords, initJournalConfig,
-        initClientAccounts, initCreditTransactions, initMaintenanceIncidents
+        initClientAccounts, initCreditTransactions, initMaintenanceIncidents, initFuelPrices
       );
     }
   }, []);
@@ -520,10 +521,11 @@ export default function App() {
     triggerCloudSync('maintenanceIncidents', newIncs);
   };
 
-  const updateFuelPricesState = (newPrices: FuelPriceConfig) => {
+  const updateFuelPricesState = async (newPrices: FuelPriceConfig) => {
     setFuelPrices(newPrices);
     saveToLocal('fuelPrices', newPrices);
-    triggerCloudSync('fuelPrices', newPrices);
+    await triggerCloudSync('fuelPrices', newPrices);
+    showNotification("Paramètres de prix sauvegardés et synchronisés !");
   };
 
   // --- API STATE CONTROLLER ACTIONS ---
