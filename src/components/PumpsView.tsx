@@ -10,7 +10,8 @@ import {
   Check, 
   Sparkles,
   HelpCircle,
-  Trash2
+  Trash2,
+  Edit3
 } from 'lucide-react';
 
 interface PumpsViewProps {
@@ -18,6 +19,7 @@ interface PumpsViewProps {
   onUpdatePumpIndices: (id: string, startIndex: number, endIndex: number) => void;
   onAddPump: (pump: Omit<Pump, 'id' | 'volumeSold' | 'lastUpdated'>) => void;
   onDeletePump: (id: string) => void;
+  onUpdatePumpConfig: (id: string, config: { name: string; fuelType: FuelType; nozzlesCount: number }) => void;
   fuelPrices: Record<string, { buy: number; sell: number }>;
 }
 
@@ -26,6 +28,7 @@ export default function PumpsView({
   onUpdatePumpIndices,
   onAddPump,
   onDeletePump,
+  onUpdatePumpConfig,
   fuelPrices
 }: PumpsViewProps) {
   // New pump configuration form state
@@ -38,6 +41,12 @@ export default function PumpsView({
   const [editingPumpId, setEditingPumpId] = useState<string | null>(null);
   const [tempStart, setTempStart] = useState<string>('');
   const [tempEnd, setTempEnd] = useState<string>('');
+
+  // Pump Configuration Edit State
+  const [configuringPumpId, setConfiguringPumpId] = useState<string | null>(null);
+  const [configPumpName, setConfigPumpName] = useState('');
+  const [configPumpFuel, setConfigPumpFuel] = useState<FuelType>('Super');
+  const [configPumpNozzles, setConfigPumpNozzles] = useState(2);
 
   const [filterFuel, setFilterFuel] = useState<string>('Tous');
 
@@ -54,6 +63,26 @@ export default function PumpsView({
     }
     onUpdatePumpIndices(id, s, e);
     setEditingPumpId(null);
+  };
+
+  const handleStartEditConfig = (pump: Pump) => {
+    setConfiguringPumpId(pump.id);
+    setConfigPumpName(pump.name);
+    setConfigPumpFuel(pump.fuelType);
+    setConfigPumpNozzles(pump.nozzlesCount);
+  };
+
+  const handleSaveConfig = (id: string) => {
+    if (!configPumpName.trim()) {
+      alert("Le nom de la pompe ne peut pas être vide !");
+      return;
+    }
+    onUpdatePumpConfig(id, {
+      name: configPumpName,
+      fuelType: configPumpFuel,
+      nozzlesCount: configPumpNozzles
+    });
+    setConfiguringPumpId(null);
   };
 
   const handleAddPumpSubmit = (e: React.FormEvent) => {
@@ -130,11 +159,11 @@ export default function PumpsView({
 
                 return (
                   <div key={pump.id} className="p-5 hover:bg-slate-50 transition-colors">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 w-full">
                       
                       {/* Name and config specs */}
-                      <div className="flex items-center gap-3.5 min-w-[160px]">
-                        <div className={`p-3 rounded-lg ${
+                      <div className="flex items-center gap-3.5 min-w-[220px] flex-1">
+                        <div className={`p-3 rounded-lg shrink-0 ${
                           pump.fuelType === 'Super' ? 'bg-amber-50 text-amber-600 border border-amber-100' :
                           pump.fuelType === 'Sans plomb' ? 'bg-emerald-50 text-emerald-600 border border-emerald-100' :
                           pump.fuelType === 'Gasoil' ? 'bg-blue-50 text-blue-600 border border-blue-100' :
@@ -142,116 +171,182 @@ export default function PumpsView({
                         }`}>
                           <Settings className="w-5 h-5" />
                         </div>
-                        <div>
-                          <div className="flex items-center gap-1.5">
-                            <h4 className="font-bold text-slate-900 text-sm">{pump.name}</h4>
-                            <span className="text-[9px] bg-slate-200 font-bold px-1.5 py-0.5 rounded text-slate-800 uppercase">
-                              {pump.fuelType}
-                            </span>
-                            <button 
-                              onClick={() => onDeletePump(pump.id)} 
-                              className="text-red-400 hover:text-red-600 bg-red-50 hover:bg-red-100 p-1 rounded-full transition-colors ml-1"
-                              title="Supprimer la pompe"
-                            >
-                              <Trash2 className="w-3 h-3" />
-                            </button>
-                          </div>
-                          <p className="text-[10px] text-slate-500 mt-1">{pump.nozzlesCount} pistolets actifs</p>
-                        </div>
-                      </div>
-
-                      {/* Calculations & Readings */}
-                      <div className="flex-1 grid grid-cols-3 gap-1 sm:gap-4 max-w-sm text-xs bg-slate-50 p-2.5 rounded-lg border border-slate-100">
-                        {isEditing ? (
-                          <div className="col-span-2 grid grid-cols-2 gap-2">
+                        
+                        {configuringPumpId === pump.id ? (
+                          <div className="space-y-2 flex-1 max-w-sm bg-slate-50 p-2.5 rounded-lg border border-slate-200">
                             <div>
-                              <label className="block text-[10px] text-slate-500 font-medium mb-0.5 font-sans">Début</label>
-                              <input 
-                                type="number" 
-                                className="w-full bg-white border border-slate-300 rounded px-1.5 py-1 text-xs font-mono focus:outline-none"
-                                value={tempStart}
-                                onChange={e => setTempStart(e.target.value)}
+                              <label className="block text-[9px] text-slate-500 font-semibold mb-0.5">Nom / Numéro Pompe</label>
+                              <input
+                                type="text"
+                                className="w-full border border-slate-300 rounded px-2 py-1 text-xs focus:ring-1 focus:ring-slate-900"
+                                value={configPumpName}
+                                onChange={e => setConfigPumpName(e.target.value)}
+                                placeholder="Nom de la pompe"
                               />
                             </div>
-                            <div>
-                              <label className="block text-[10px] text-slate-500 font-medium mb-0.5 font-sans">Fin</label>
-                              <input 
-                                type="number" 
-                                className="w-full bg-white border border-slate-300 rounded px-1.5 py-1 text-xs font-mono focus:outline-none"
-                                value={tempEnd}
-                                onChange={e => setTempEnd(e.target.value)}
-                              />
+                            <div className="flex gap-2">
+                              <div className="w-1/2">
+                                <label className="block text-[9px] text-slate-500 font-semibold mb-0.5">Carburant</label>
+                                <select
+                                  className="w-full border border-slate-300 rounded px-1.5 py-1 text-xs bg-white"
+                                  value={configPumpFuel}
+                                  onChange={e => setConfigPumpFuel(e.target.value as FuelType)}
+                                >
+                                  <option value="Super">Super</option>
+                                  <option value="Sans plomb">Sans plomb</option>
+                                  <option value="Gasoil">Gasoil</option>
+                                  <option value="Pétrole">Pétrole</option>
+                                </select>
+                              </div>
+                              <div className="w-1/2">
+                                <label className="block text-[9px] text-slate-500 font-semibold mb-0.5">Pistolets</label>
+                                <input
+                                  type="number"
+                                  min="1"
+                                  max="6"
+                                  className="w-full border border-slate-300 rounded px-1.5 py-1 text-xs"
+                                  value={configPumpNozzles}
+                                  onChange={e => setConfigPumpNozzles(Number(e.target.value))}
+                                  placeholder="Pistolets"
+                                />
+                              </div>
+                            </div>
+                            <div className="flex gap-2 pt-1">
+                              <button
+                                onClick={() => handleSaveConfig(pump.id)}
+                                className="px-3 py-1 text-[11px] font-bold bg-emerald-600 text-white rounded hover:bg-emerald-700 transition-colors"
+                              >
+                                Valider
+                              </button>
+                              <button
+                                onClick={() => setConfiguringPumpId(null)}
+                                className="px-3 py-1 text-[11px] font-semibold bg-slate-200 text-slate-700 rounded hover:bg-slate-300 transition-colors"
+                              >
+                                Annuler
+                              </button>
                             </div>
                           </div>
                         ) : (
-                          <>
-                            <div>
-                              <span className="block text-[10px] text-slate-500 font-medium font-sans">Index Début</span>
-                              <span className="font-mono font-semibold text-slate-800 tracking-tight">{pump.startIndex.toLocaleString()}</span>
+                          <div>
+                            <div className="flex items-center gap-1.5">
+                              <h4 className="font-bold text-slate-900 text-sm">{pump.name}</h4>
+                              <span className="text-[9px] bg-slate-200 font-bold px-1.5 py-0.5 rounded text-slate-800 uppercase">
+                                {pump.fuelType}
+                              </span>
+                              <button 
+                                onClick={() => handleStartEditConfig(pump)} 
+                                className="text-blue-500 hover:text-blue-700 bg-blue-50 hover:bg-blue-100 p-1.5 rounded-full transition-colors ml-1"
+                                title="Modifier la configuration"
+                              >
+                                <Edit3 className="w-3.5 h-3.5" />
+                              </button>
+                              <button 
+                                onClick={() => onDeletePump(pump.id)} 
+                                className="text-red-400 hover:text-red-600 bg-red-50 hover:bg-red-100 p-1.5 rounded-full transition-colors ml-1"
+                                title="Supprimer la pompe"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
                             </div>
-                            <div>
-                              <span className="block text-[10px] text-slate-500 font-medium font-sans">Index Fin</span>
-                              <span className="font-mono font-semibold text-slate-800 tracking-tight">{pump.endIndex.toLocaleString()}</span>
-                            </div>
-                          </>
+                            <p className="text-[10px] text-slate-500 mt-1">{pump.nozzlesCount} pistolets actifs</p>
+                          </div>
                         )}
-                        <div className="border-l border-slate-200 pl-3">
-                          <span className="block text-[10px] text-slate-500 font-medium font-sans">Vendu (Calcul)</span>
-                          <span className="font-mono font-bold text-slate-950 text-xs">
-                            {isEditing ? (
-                              <span className="text-[11px] text-slate-500 animate-pulse">En cours...</span>
-                            ) : (
-                              `${pump.volumeSold.toLocaleString()} L`
-                            )}
-                          </span>
-                        </div>
                       </div>
 
-                      {/* Value and actions */}
-                      <div className="sm:text-right flex items-center sm:flex-col justify-between sm:justify-center border-t sm:border-0 pt-2 sm:pt-0 border-slate-100">
-                        <div className="hidden sm:block">
-                          <span className="block text-[9px] text-slate-500 uppercase font-semibold">CA Estimé</span>
-                          <span className="font-mono font-bold text-slate-900 text-xs bg-slate-100 px-2 py-0.5 rounded">
-                            {turnover.toLocaleString()} FCFA
-                          </span>
-                        </div>
-
-                        <div className="flex gap-1.5">
-                          {isEditing ? (
-                            <div className="flex gap-1 animate-fadeIn">
-                              <button 
-                                onClick={() => handleSaveIndices(pump.id)}
-                                className="bg-slate-900 text-white rounded p-1.5 hover:bg-slate-800 transition-colors"
-                                title="Sauvegarder"
-                              >
-                                <Check className="w-4 h-4" />
-                              </button>
-                              <button 
-                                onClick={() => setEditingPumpId(null)}
-                                className="bg-slate-200 text-slate-700 px-2 text-xs font-semibold py-1 hover:bg-slate-300"
-                              >
-                                X
-                              </button>
+                      {configuringPumpId !== pump.id && (
+                        <>
+                          {/* Calculations & Readings */}
+                          <div className="flex-1 grid grid-cols-3 gap-1 sm:gap-4 max-w-sm text-xs bg-slate-50 p-2.5 rounded-lg border border-slate-100">
+                            {isEditing ? (
+                              <div className="col-span-2 grid grid-cols-2 gap-2">
+                                <div>
+                                  <label className="block text-[10px] text-slate-500 font-medium mb-0.5 font-sans">Début</label>
+                                  <input 
+                                    type="number" 
+                                    className="w-full bg-white border border-slate-300 rounded px-1.5 py-1 text-xs font-mono focus:outline-none"
+                                    value={tempStart}
+                                    onChange={e => setTempStart(e.target.value)}
+                                  />
+                                </div>
+                                <div>
+                                  <label className="block text-[10px] text-slate-500 font-medium mb-0.5 font-sans">Fin</label>
+                                  <input 
+                                    type="number" 
+                                    className="w-full bg-white border border-slate-300 rounded px-1.5 py-1 text-xs font-mono focus:outline-none"
+                                    value={tempEnd}
+                                    onChange={e => setTempEnd(e.target.value)}
+                                  />
+                                </div>
+                              </div>
+                            ) : (
+                              <>
+                                <div>
+                                  <span className="block text-[10px] text-slate-500 font-medium font-sans">Index Début</span>
+                                  <span className="font-mono font-semibold text-slate-800 tracking-tight">{pump.startIndex.toLocaleString()}</span>
+                                </div>
+                                <div>
+                                  <span className="block text-[10px] text-slate-500 font-medium font-sans">Index Fin</span>
+                                  <span className="font-mono font-semibold text-slate-800 tracking-tight">{pump.endIndex.toLocaleString()}</span>
+                                </div>
+                              </>
+                            )}
+                            <div className="border-l border-slate-200 pl-3">
+                              <span className="block text-[10px] text-slate-500 font-medium font-sans">Vendu (Calcul)</span>
+                              <span className="font-mono font-bold text-slate-950 text-xs">
+                                {isEditing ? (
+                                  <span className="text-[11px] text-slate-500 animate-pulse">En cours...</span>
+                                ) : (
+                                  `${pump.volumeSold.toLocaleString()} L`
+                                )}
+                              </span>
                             </div>
-                          ) : (
-                            <div className="flex flex-col gap-1.5 sm:flex-row">
-                              <button 
-                                onClick={() => {
-                                  setEditingPumpId(pump.id);
-                                  setTempStart(String(pump.startIndex));
-                                  setTempEnd(String(pump.endIndex));
-                                }}
-                                className="text-xs bg-orange-50 border border-orange-100 text-orange-700 px-2.5 py-1 rounded font-bold hover:bg-orange-100/80 inline-flex items-center gap-1 transition-colors"
-                              >
-                                <Calculator className="w-3.5 h-3.5" /> Relevé index
-                              </button>
-                              {pump.volumeSold > 0 && (
-                                <button
-                                  onClick={() => {
-                                    if(window.confirm('Voulez-vous annuler ce relevé et remettre le volume vendu à zéro ?')) {
-                                      onUpdatePumpIndices(pump.id, pump.startIndex, pump.startIndex);
-                                    }
-                                  }}
+                          </div>
+
+                          {/* Value and actions */}
+                          <div className="sm:text-right flex items-center sm:flex-col justify-between sm:justify-center border-t sm:border-0 pt-2 sm:pt-0 border-slate-100">
+                            <div className="hidden sm:block">
+                              <span className="block text-[9px] text-slate-500 uppercase font-semibold">CA Estimé</span>
+                              <span className="font-mono font-bold text-slate-900 text-xs bg-slate-100 px-2 py-0.5 rounded">
+                                {turnover.toLocaleString()} FCFA
+                              </span>
+                            </div>
+
+                            <div className="flex gap-1.5">
+                              {isEditing ? (
+                                <div className="flex gap-1 animate-fadeIn">
+                                  <button 
+                                    onClick={() => handleSaveIndices(pump.id)}
+                                    className="bg-slate-900 text-white rounded p-1.5 hover:bg-slate-800 transition-colors"
+                                    title="Sauvegarder"
+                                  >
+                                    <Check className="w-4 h-4" />
+                                  </button>
+                                  <button 
+                                    onClick={() => setEditingPumpId(null)}
+                                    className="bg-slate-200 text-slate-700 px-2 text-xs font-semibold py-1 hover:bg-slate-300"
+                                  >
+                                    X
+                                  </button>
+                                </div>
+                              ) : (
+                                <div className="flex flex-col gap-1.5 sm:flex-row">
+                                  <button 
+                                    onClick={() => {
+                                      setEditingPumpId(pump.id);
+                                      setTempStart(String(pump.startIndex));
+                                      setTempEnd(String(pump.endIndex));
+                                    }}
+                                    className="text-xs bg-orange-50 border border-orange-100 text-orange-700 px-2.5 py-1 rounded font-bold hover:bg-orange-100/80 inline-flex items-center gap-1 transition-colors"
+                                  >
+                                    <Calculator className="w-3.5 h-3.5" /> Relevé index
+                                  </button>
+                                  {pump.volumeSold > 0 && (
+                                    <button
+                                      onClick={() => {
+                                        if(window.confirm('Voulez-vous annuler ce relevé et remettre le volume vendu à zéro ?')) {
+                                          onUpdatePumpIndices(pump.id, pump.startIndex, pump.startIndex);
+                                        }
+                                      }}
                                   className="text-xs bg-red-50 border border-red-100 text-red-600 px-2.5 py-1 rounded font-bold hover:bg-red-100/80 inline-flex items-center justify-center gap-1 transition-colors"
                                   title="Annuler ce relevé"
                                 >
@@ -262,7 +357,8 @@ export default function PumpsView({
                           )}
                         </div>
                       </div>
-
+                      </>
+                      )}
                     </div>
                   </div>
                 );

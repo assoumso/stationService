@@ -728,6 +728,22 @@ export default function App() {
     }
   };
 
+  const handleUpdatePumpConfig = (id: string, config: { name: string; fuelType: FuelType; nozzlesCount: number }) => {
+    const updated = pumps.map(p => {
+      if (p.id === id) {
+        return {
+          ...p,
+          name: config.name,
+          fuelType: config.fuelType,
+          nozzlesCount: config.nozzlesCount
+        };
+      }
+      return p;
+    });
+    updatePumpsState(updated);
+    showNotification("Configuration de la pompe mise à jour !");
+  };
+
   // 6. Sell product in Shop (Boutique)
   const handleSellProduct = (productId: string, quantity: number) => {
     const targetProd = shopProducts.find(p => p.id === productId);
@@ -1186,6 +1202,7 @@ export default function App() {
             onUpdatePumpIndices={handleUpdatePumpIndices}
             onAddPump={handleAddPump}
             onDeletePump={handleDeletePump}
+            onUpdatePumpConfig={handleUpdatePumpConfig}
           />
         );
       case 'boutique':
