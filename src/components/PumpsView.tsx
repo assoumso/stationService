@@ -9,7 +9,8 @@ import {
   RefreshCcw, 
   Check, 
   Sparkles,
-  HelpCircle
+  HelpCircle,
+  Trash2
 } from 'lucide-react';
 
 interface PumpsViewProps {
@@ -224,16 +225,31 @@ export default function PumpsView({
                               </button>
                             </div>
                           ) : (
-                            <button 
-                              onClick={() => {
-                                setEditingPumpId(pump.id);
-                                setTempStart(String(pump.startIndex));
-                                setTempEnd(String(pump.endIndex));
-                              }}
-                              className="text-xs bg-orange-50 border border-orange-100 text-orange-700 px-2.5 py-1 rounded font-bold hover:bg-orange-100/80 inline-flex items-center gap-1 transition-colors"
-                            >
-                              <Calculator className="w-3.5 h-3.5" /> Relevé index
-                            </button>
+                            <div className="flex flex-col gap-1.5 sm:flex-row">
+                              <button 
+                                onClick={() => {
+                                  setEditingPumpId(pump.id);
+                                  setTempStart(String(pump.startIndex));
+                                  setTempEnd(String(pump.endIndex));
+                                }}
+                                className="text-xs bg-orange-50 border border-orange-100 text-orange-700 px-2.5 py-1 rounded font-bold hover:bg-orange-100/80 inline-flex items-center gap-1 transition-colors"
+                              >
+                                <Calculator className="w-3.5 h-3.5" /> Relevé index
+                              </button>
+                              {pump.volumeSold > 0 && (
+                                <button
+                                  onClick={() => {
+                                    if(window.confirm('Voulez-vous annuler ce relevé et remettre le volume vendu à zéro ?')) {
+                                      onUpdatePumpIndices(pump.id, pump.startIndex, pump.startIndex);
+                                    }
+                                  }}
+                                  className="text-xs bg-red-50 border border-red-100 text-red-600 px-2.5 py-1 rounded font-bold hover:bg-red-100/80 inline-flex items-center justify-center gap-1 transition-colors"
+                                  title="Annuler ce relevé"
+                                >
+                                  <Trash2 className="w-3.5 h-3.5" />
+                                </button>
+                              )}
+                            </div>
                           )}
                         </div>
                       </div>
