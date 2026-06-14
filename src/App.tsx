@@ -88,7 +88,8 @@ import {
   FileText,
   CheckCircle2,
   CreditCard,
-  Settings
+  Settings,
+  Info
 } from 'lucide-react';
 
 import { 
@@ -129,6 +130,14 @@ export default function App() {
   const [creditTransactions, setCreditTransactions] = useState<CreditTransaction[]>([]);
   const [maintenanceIncidents, setMaintenanceIncidents] = useState<MaintenanceIncident[]>([]);
   const [fuelPrices, setFuelPrices] = useState<FuelPriceConfig>(FUEL_PRICES);
+
+  // --- NOTIFICATION STATE ---
+  const [notification, setNotification] = useState<{ message: string; type: 'success' | 'error' | 'info' } | null>(null);
+
+  const showNotification = (message: string, type: 'success' | 'error' | 'info' = 'success') => {
+    setNotification({ message, type });
+    setTimeout(() => setNotification(null), 3500);
+  };
 
   // --- SUPABASE SYNC STATES ---
   const [isSyncModalOpen, setIsSyncModalOpen] = useState<boolean>(false);
@@ -558,6 +567,7 @@ export default function App() {
       return f;
     });
     updateFuelsState(updated);
+    showNotification("Stock de carburant mis à jour !");
   };
 
   // 2. Tank Stock update
@@ -570,6 +580,7 @@ export default function App() {
       return t;
     });
     updateTanksState(updated);
+    showNotification("Jaugeage de la cuve enregistré !");
   };
 
   // 3. Register Delivery
@@ -584,6 +595,7 @@ export default function App() {
     // Add to list
     const updatedDels = [newDelivery, ...deliveries];
     updateDeliveriesState(updatedDels);
+    showNotification("Livraison enregistrée avec succès !");
 
     // Update fuel entries stock
     const updatedFuels = fuels.map(f => {
@@ -690,6 +702,7 @@ export default function App() {
     };
     const updated = [...pumps, newPump];
     updatePumpsState(updated);
+    showNotification("Nouvelle pompe configurée et activée !");
   };
 
   const handleDeletePump = (id: string) => {
@@ -697,6 +710,7 @@ export default function App() {
     if (confirmDelete) {
       const updated = pumps.filter(p => p.id !== id);
       updatePumpsState(updated);
+      showNotification("Pompe supprimée.", "info");
     }
   };
 
@@ -747,6 +761,7 @@ export default function App() {
       return s;
     });
     updateShiftsState(updatedShifts);
+    showNotification("Vente boutique enregistrée !");
   };
 
   // 7. Restock Shop product
@@ -800,6 +815,7 @@ export default function App() {
       return s;
     });
     updateShiftsState(updatedShifts);
+    showNotification("Lavage enregistré et encaissé !");
   };
 
   // 10. Add Oil Change (Vidange) Record
@@ -834,6 +850,7 @@ export default function App() {
       return s;
     });
     updateShiftsState(updatedShifts);
+    showNotification("Vidange enregistrée !");
   };
 
   // 11. Toggle employee presence
@@ -883,6 +900,7 @@ export default function App() {
 
     const updated = [newExpense, ...expenses];
     updateExpensesState(updated);
+    showNotification("Dépense soumise pour approbation !", "info");
   };
 
   // 15. Approve Expense (actually pays from cash method)
@@ -908,6 +926,7 @@ export default function App() {
       return cr;
     });
     updateCashRegistersState(updatedCash);
+    showNotification("Dépense approuvée et déduite de la caisse !");
   };
 
   // 16. Reject Expense Voucher
@@ -919,6 +938,7 @@ export default function App() {
       return e;
     });
     updateExpensesState(updatedExps);
+    showNotification("Dépense rejetée.", "error");
   };
 
   // 17. Live closing execution
@@ -945,6 +965,7 @@ export default function App() {
 
     const updated = [newTest, ...qualityTests];
     updateQualityTestsState(updated);
+    showNotification("Test de qualité enregistré !");
   };
 
   // 19. Delete quality control test
@@ -975,6 +996,7 @@ export default function App() {
   // 21. Action Handlers for Credits B2B & Accounts
   const handleAddClientAccount = (account: ClientAccount) => {
     updateClientAccountsState([...clientAccounts, account]);
+    showNotification("Nouveau compte client B2B créé !");
   };
 
   const handleDeleteClientAccount = (id: string) => {
@@ -989,6 +1011,7 @@ export default function App() {
   const handleAddCreditTransaction = (tx: CreditTransaction) => {
     // 1. Appended new transaction
     updateCreditTransactionsState([tx, ...creditTransactions]);
+    showNotification("Transaction de crédit enregistrée !");
 
     // 2. Adjust client account balance (totalCreditDetails) in real-time
     const updatedAccounts = clientAccounts.map(cl => {
@@ -1063,6 +1086,7 @@ export default function App() {
   const handleAddMaintenanceIncident = (inc: MaintenanceIncident) => {
     const updated = [inc, ...maintenanceIncidents];
     updateMaintenanceIncidentsState(updated);
+    showNotification("Incident de maintenance enregistré !");
   };
 
   const handleUpdateMaintenanceIncident = (inc: MaintenanceIncident) => {
@@ -1256,6 +1280,19 @@ export default function App() {
   return (
     <div className="min-h-screen bg-slate-50 flex" id="app-layout">
       
+      {/* Global Notification Toast */}
+      {notification && (
+        <div className={`fixed bottom-4 right-4 sm:bottom-6 sm:right-6 px-4 py-3 rounded-lg shadow-xl z-50 text-white text-sm font-semibold flex items-center gap-2 animate-in slide-in-from-bottom-5 fade-in duration-300 ${
+          notification.type === 'success' ? 'bg-emerald-600' : 
+          notification.type === 'error' ? 'bg-red-600' : 'bg-blue-600'
+        }`}>
+          {notification.type === 'success' && <CheckCircle2 className="w-5 h-5" />}
+          {notification.type === 'error' && <AlertTriangle className="w-5 h-5" />}
+          {notification.type === 'info' && <Info className="w-5 h-5" />}
+          {notification.message}
+        </div>
+      )}
+
       {/* 1. SIDEBAR NAVIGATION - DESKTOP RAIL */}
       <aside className="hidden lg:flex flex-col bg-slate-900 text-slate-300 w-56 shrink-0 border-r border-slate-800" id="aside-navbar">
         {/* Branding header */}
